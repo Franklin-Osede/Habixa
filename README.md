@@ -67,3 +67,27 @@ _Scan the QR code with Expo Go or run on Simulator._
 ## 📄 License
 
 Proprietary Software.
+
+## 💾 Memory Management Scripts
+
+To save RAM and disk space, use the following scripts to manage the development environment. These scripts automatically install dependencies when starting and delete them when stopping.
+
+> **Note:** These scripts use `pnpm` for efficiency.
+
+### Start Development
+
+- **`./dev-start.sh`**: Installs dependencies (if missing) and starts both API and Mobile in the background.
+- **`./dev-start-api.sh`**: Starts only the API.
+- **`./dev-start-mobile.sh`**: Starts only the Mobile app.
+
+### Stop & Cleanup
+
+- **`./dev-stop.sh`**: Stops all processes (API & Mobile) and **deletes** `node_modules` to free up space.
+- **`./dev-stop-api.sh`**: Stops API and deletes its `node_modules`.
+- **`./dev-stop-mobile.sh`**: Stops Mobile and deletes its `node_modules`.
+- **`./cleanup-all.sh`**: Manually deletes `node_modules` and cleans logs/PIDs without stopping processes (use with caution).
+
+### Logs & PIDs
+
+- Logs are saved to `api.log` and `mobile.log` in the root directory.
+- Process IDs are stored in `api.pid` and `mobile.pid`.
