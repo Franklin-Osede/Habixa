@@ -1,0 +1,32 @@
+# General
+node_modules/
+.DS_Store
+dist/
+build/
+coverage/
+*.log
+.env
+.env.*
+
+# NestJS
+apps/api/dist/
+apps/api/*.tsbuildinfo
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/web-build/
+apps/mobile/android/
+apps/mobile/ios/
+!apps/mobile/android/build.gradle
+!apps/mobile/android/gradle.properties
+!apps/mobile/android/settings.gradle
+!apps/mobile/ios/Podfile
+!apps/mobile/ios/Habixa.xcodeproj/
+
+# IDEs
+.vscode/
+.idea/
+
+# Prisma
+apps/api/prisma/migrations/
+!apps/api/prisma/migrations/.keep
