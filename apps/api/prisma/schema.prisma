@@ -20,7 +20,27 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  dailyPlans       DailyPlan[]
+  habits           Habit[]
+  knowledgeSnippets KnowledgeSnippet[]
+  stats            UserStats?
+
   @@map("users")
+}
+
+model UserStats {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  xp             Int      @default(0)
+  level          Int      @default(1)
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastActivityDate DateTime? 
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("user_stats")
 }
 
 model DailyPlan {
@@ -47,4 +67,43 @@ model PlanItem {
   updatedAt   DateTime @updatedAt
 
   @@map("plan_items")
+}
+
+model Habit {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  frequency   String     // daily, weekly
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  logs        HabitLog[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("habits")
+}
+
+model HabitLog {
+  id          String   @id @default(uuid())
+  habitId     String
+  habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date        DateTime
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("habit_logs")
+}
+
+model KnowledgeSnippet {
+  id        String   @id @default(uuid())
+  content   String
+  tags      String[]
+  source    String   // manual, url, file
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("knowledge_snippets")
 }
