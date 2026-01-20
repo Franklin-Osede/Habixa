@@ -1,4 +1,3 @@
-
 import { PlanItem } from './src/modules/planning/domain/plan-item.entity';
 
 console.log('Script started');
