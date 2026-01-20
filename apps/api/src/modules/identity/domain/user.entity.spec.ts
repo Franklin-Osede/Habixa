@@ -1,5 +1,3 @@
-import { UniqueEntityID } from '../../../shared/domain/unique-entity-id';
-import { Result } from '../../../shared/domain/result';
 import { User } from './user.entity';
 
 describe('User Entity', () => {
@@ -19,12 +17,12 @@ describe('User Entity', () => {
     // In a real scenario, Email should be a ValueObject with its own validation.
     // Here we just test the factory method basic validation delegation if any.
     // For now assuming User accepts string, but let's say we enforce non-empty.
-    
+
     const userResult = User.create({
       email: '',
       password: 'password',
     });
-    
+
     expect(userResult.isFailure).toBe(true);
   });
 });

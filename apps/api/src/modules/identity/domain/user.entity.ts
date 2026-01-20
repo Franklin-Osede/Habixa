@@ -8,6 +8,9 @@ interface UserProps {
 }
 
 export class User extends AggregateRoot<UserProps> {
+  // Explicitly declare props to satisfy TS if base class inference fails
+  public readonly props: UserProps;
+
   get email(): string {
     return this.props.email;
   }
@@ -18,6 +21,7 @@ export class User extends AggregateRoot<UserProps> {
 
   private constructor(props: UserProps, id?: UniqueEntityID) {
     super(props, id);
+    this.props = props;
   }
 
   public static create(props: UserProps, id?: UniqueEntityID): Result<User> {
@@ -25,7 +29,7 @@ export class User extends AggregateRoot<UserProps> {
       return Result.fail<User>('Email is required');
     }
     // Further validation could go here or in Value Objects
-    
+
     return Result.ok<User>(new User(props, id));
   }
 }

@@ -24,7 +24,7 @@ export class PrismaPlanRepository implements PlanRepository {
       });
 
       // Handle items (simplistic: delete all and recreate, or upsert each)
-      // For MVP simplicity, let's just create new ones if they don't exist, 
+      // For MVP simplicity, let's just create new ones if they don't exist,
       // but proper way is diffing. Here we just loop upsert.
       for (const item of data.items) {
         await tx.planItem.upsert({
@@ -46,13 +46,16 @@ export class PrismaPlanRepository implements PlanRepository {
     });
   }
 
-  async findByUserIdAndDate(userId: string, date: Date): Promise<DailyPlan | null> {
+  async findByUserIdAndDate(
+    userId: string,
+    date: Date,
+  ): Promise<DailyPlan | null> {
     // Prisma date filtering might require range or exact match logic depending on time
     // Assuming simple date check for now, potentially ignoring time components in real app logic
     const startOfDay = new Date(date);
-    startOfDay.setHours(0,0,0,0);
+    startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
-    endOfDay.setHours(23,59,59,999);
+    endOfDay.setHours(23, 59, 59, 999);
 
     const raw = await this.prisma.dailyPlan.findFirst({
       where: {

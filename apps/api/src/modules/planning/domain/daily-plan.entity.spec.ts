@@ -39,17 +39,22 @@ describe('DailyPlan Aggregate', () => {
     }).getValue();
 
     for (let i = 0; i < 5; i++) {
-        plan.addItem(PlanItem.create({ title: `Item ${i}`, description: '' }).getValue());
+      plan.addItem(
+        PlanItem.create({ title: `Item ${i}`, description: '' }).getValue(),
+      );
     }
 
-    const item6 = PlanItem.create({ title: 'Item 6', description: '' }).getValue();
-    
-    // In strict DDD, we might throw or return Result. 
+    const item6 = PlanItem.create({
+      title: 'Item 6',
+      description: '',
+    }).getValue();
+
+    // In strict DDD, we might throw or return Result.
     // Here let's assume addItem returns void but throws/logs, OR we can make addItem return Result.
-    // For simplicity in this bounded context, let's enforce it via Result in strict mode, 
-    // or just checking array length afterwards. 
+    // For simplicity in this bounded context, let's enforce it via Result in strict mode,
+    // or just checking array length afterwards.
     // Let's implement addItem to return Result<void> for better control.
-    
+
     const result = plan.addItem(item6);
     expect(result.isFailure).toBe(true);
     expect(result.error).toContain('Max 5 items');

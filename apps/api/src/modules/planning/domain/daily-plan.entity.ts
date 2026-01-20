@@ -29,7 +29,10 @@ export class DailyPlan extends AggregateRoot<DailyPlanProps> {
     super(props, id);
   }
 
-  public static create(props: DailyPlanProps, id?: UniqueEntityID): Result<DailyPlan> {
+  public static create(
+    props: DailyPlanProps,
+    id?: UniqueEntityID,
+  ): Result<DailyPlan> {
     const guardResult = Result.combine([]); // Add guards if needed (e.g. valid date)
     if (guardResult.isFailure) {
       return Result.fail(guardResult.error as string);
@@ -39,7 +42,9 @@ export class DailyPlan extends AggregateRoot<DailyPlanProps> {
 
   public addItem(item: PlanItem): Result<void> {
     if (this.items.length >= 5) {
-      return Result.fail('Max 5 items allowed per daily plan to prevent overwhelm.');
+      return Result.fail(
+        'Max 5 items allowed per daily plan to prevent overwhelm.',
+      );
     }
     this.props.items?.push(item);
     return Result.ok();

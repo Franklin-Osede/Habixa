@@ -1,6 +1,9 @@
-import { GenerateDailyPlanUseCase, GenerateDailyPlanDto } from './generate-daily-plan.use-case';
+import {
+  GenerateDailyPlanUseCase,
+  GenerateDailyPlanDto,
+} from './generate-daily-plan.use-case';
 import { DailyPlan } from '../domain/daily-plan.entity';
-import { UniqueEntityID } from '../../../../shared/domain/unique-entity-id';
+import { UniqueEntityID } from '../../../shared/domain/unique-entity-id';
 
 describe('GenerateDailyPlanUseCase', () => {
   let useCase: GenerateDailyPlanUseCase;

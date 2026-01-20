@@ -6,9 +6,10 @@ import { UserRepository } from '../domain/repositories/user.repository';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class RegisterUserUseCase
-  implements UseCase<RegisterUserDto, Promise<Result<void>>>
-{
+export class RegisterUserUseCase implements UseCase<
+  RegisterUserDto,
+  Promise<Result<void>>
+> {
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(request: RegisterUserDto): Promise<Result<void>> {

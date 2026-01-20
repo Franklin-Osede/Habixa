@@ -1,4 +1,7 @@
-import { DailyPlan as PrismaDailyPlan, PlanItem as PrismaPlanItem } from '@prisma/client';
+import {
+  DailyPlan as PrismaDailyPlan,
+  PlanItem as PrismaPlanItem,
+} from '@prisma/client';
 import { DailyPlan } from '../../domain/daily-plan.entity';
 import { PlanItem } from '../../domain/plan-item.entity';
 import { UniqueEntityID } from '../../../../shared/domain/unique-entity-id';
@@ -28,7 +31,9 @@ export class PlanMapper {
     );
 
     if (planOrError.isFailure) {
-      throw new Error(`Invalid plan in DB: ${planOrError.error}`);
+      throw new Error(
+        `Invalid plan in DB: ${JSON.stringify(planOrError.error)}`,
+      );
     }
 
     return planOrError.getValue();
@@ -44,7 +49,7 @@ export class PlanMapper {
       items: plan.items.map((i) => ({
         id: i.id ? i.id.toString() : new UniqueEntityID().toString(),
         title: i.title,
-        description: (i as any).props.description || '', // Accessing props directly due to simplistic entity implementation
+        description: i.description || '',
         isCompleted: i.isCompleted,
         planId: plan.id.toString(),
         createdAt: new Date(),
