@@ -2,29 +2,48 @@ import { RegisterUserUseCase } from './register-user.use-case';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { User } from '../domain/user.entity';
 import { RegisterUserDto } from './dtos/register-user.dto';
+import { HashService } from '../../auth/application/hash.service';
 
 // Mock Repository
 class MockUserRepository implements UserRepository {
   private users: User[] = [];
 
-  async save(user: User): Promise<void> {
+  save(user: User): Promise<void> {
     this.users.push(user);
-    await Promise.resolve();
+    return Promise.resolve();
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    await Promise.resolve();
-    return this.users.find((u) => u.email === email) || null;
+  findByEmail(email: string): Promise<User | null> {
+    return Promise.resolve(this.users.find((u) => u.email === email) || null);
+  }
+
+  findById(id: string): Promise<User | null> {
+    return Promise.resolve(
+      this.users.find((u) => u.id.toString() === id) || null,
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  saveProfile(userId: string, data: any): Promise<void> {
+    return Promise.resolve();
   }
 }
 
 describe('RegisterUserUseCase', () => {
   let useCase: RegisterUserUseCase;
   let repository: MockUserRepository;
+  let mockHashService: jest.Mocked<HashService>;
 
   beforeEach(() => {
     repository = new MockUserRepository();
-    useCase = new RegisterUserUseCase(repository);
+    mockHashService = {
+      hash: jest
+        .fn()
+        .mockImplementation((pwd) => Promise.resolve(`hashed_${pwd}`)),
+      compare: jest.fn(),
+    } as unknown as jest.Mocked<HashService>;
+
+    useCase = new RegisterUserUseCase(repository, mockHashService);
   });
 
   it('should register a new user successfully', async () => {

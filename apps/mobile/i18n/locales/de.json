@@ -1,0 +1,25 @@
+{
+  "common": {
+    "welcome": "Willkommen",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "back": "Zurück"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "signIn": "Einloggen",
+    "signUp": "Konto erstellen",
+    "noAccount": "Kein Konto?",
+    "hasAccount": "Haben Sie bereits ein Konto?"
+  },
+  "home": {
+    "title": "Ihr Plan Heute",
+    "generatePlan": "Plan Erstellen"
+  }
+}

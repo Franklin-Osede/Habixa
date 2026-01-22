@@ -28,4 +28,35 @@ export class PrismaKnowledgeRepository implements KnowledgeRepository {
       },
     });
   }
+
+  async findAllByUserId(
+    userId: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<KnowledgeSnippet[]> {
+    const rawSnippets = await this.prisma.knowledgeSnippet.findMany({
+      where: { userId },
+      skip: offset,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return rawSnippets.map((raw) => KnowledgeMapper.toDomain(raw));
+  }
+
+  async findById(id: string): Promise<KnowledgeSnippet | null> {
+    const raw = await this.prisma.knowledgeSnippet.findUnique({
+      where: { id },
+    });
+
+    if (!raw) return null;
+
+    return KnowledgeMapper.toDomain(raw);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.knowledgeSnippet.delete({
+      where: { id },
+    });
+  }
 }

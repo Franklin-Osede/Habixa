@@ -32,6 +32,10 @@ export class KnowledgeSnippet extends AggregateRoot<KnowledgeSnippetProps> {
     return this.props.source;
   }
 
+  get createdAt(): Date {
+    return this.props.createdAt || new Date();
+  }
+
   // id getter is inherited from Entity base class now
 
   private constructor(props: KnowledgeSnippetProps, id?: UniqueEntityID) {

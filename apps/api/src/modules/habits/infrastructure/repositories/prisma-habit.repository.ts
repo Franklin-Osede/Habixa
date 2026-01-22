@@ -54,4 +54,19 @@ export class PrismaHabitRepository implements HabitRepository {
 
     return HabitMapper.toDomain(raw);
   }
+
+  async findAllByUserId(userId: string): Promise<Habit[]> {
+    const rawHabits = await this.prisma.habit.findMany({
+      where: { userId },
+      include: { logs: true },
+    });
+
+    return rawHabits.map((raw) => HabitMapper.toDomain(raw));
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.habit.delete({
+      where: { id },
+    });
+  }
 }

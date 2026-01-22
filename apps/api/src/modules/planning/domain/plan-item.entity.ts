@@ -38,9 +38,8 @@ export class PlanItem {
     if (!props.title || props.title.length < 3) {
       return Result.fail('Title must be at least 3 chars');
     }
-    return Result.ok<PlanItem>(
-      new PlanItem({ ...props, isCompleted: props.isCompleted ?? false }, id),
-    );
+    const isCompleted: boolean = props.isCompleted ?? false;
+    return Result.ok<PlanItem>(new PlanItem({ ...props, isCompleted }, id));
   }
 
   public complete(): void {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { CreateHabitUseCase } from './create-habit.use-case';
 import { HabitRepository } from '../domain/repositories/habit.repository';
 import { CreateHabitDto } from './dtos/create-habit.dto';
@@ -12,7 +11,8 @@ describe('CreateHabitUseCase', () => {
     mockRepository = {
       save: jest.fn(),
       findById: jest.fn(),
-    };
+      findAllByUserId: jest.fn(),
+    } as unknown as HabitRepository;
     useCase = new CreateHabitUseCase(mockRepository);
   });
 

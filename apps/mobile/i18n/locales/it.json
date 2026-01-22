@@ -1,0 +1,25 @@
+{
+  "common": {
+    "welcome": "Benvenuto",
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "back": "Indietro"
+  },
+  "auth": {
+    "login": "Accedi",
+    "register": "Registrati",
+    "logout": "Disconnetti",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Entra",
+    "signUp": "Crea Account",
+    "noAccount": "Non hai un account?",
+    "hasAccount": "Hai già un account?"
+  },
+  "home": {
+    "title": "Il Tuo Piano Oggi",
+    "generatePlan": "Genera Piano"
+  }
+}

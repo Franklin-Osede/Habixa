@@ -31,9 +31,11 @@ export class PlanMapper {
     );
 
     if (planOrError.isFailure) {
-      throw new Error(
-        `Invalid plan in DB: ${JSON.stringify(planOrError.error)}`,
-      );
+      const errorMessage =
+        typeof planOrError.error === 'string'
+          ? planOrError.error
+          : JSON.stringify(planOrError.error);
+      throw new Error(`Invalid plan in DB: ${errorMessage}`);
     }
 
     return planOrError.getValue();

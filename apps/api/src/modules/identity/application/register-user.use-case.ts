@@ -4,13 +4,17 @@ import { RegisterUserDto } from './dtos/register-user.dto';
 import { User } from '../domain/user.entity';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { Injectable } from '@nestjs/common';
+import { HashService } from '../../auth/application/hash.service';
 
 @Injectable()
 export class RegisterUserUseCase implements UseCase<
   RegisterUserDto,
   Promise<Result<void>>
 > {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly hashService: HashService,
+  ) {}
 
   async execute(request: RegisterUserDto): Promise<Result<void>> {
     const emailLower = request.email.toLowerCase();
@@ -20,9 +24,12 @@ export class RegisterUserUseCase implements UseCase<
       return Result.fail('User already exists');
     }
 
+    // Hash password
+    const hashedPassword = await this.hashService.hash(request.password);
+
     const userOrError = User.create({
       email: emailLower,
-      password: request.password, // In real app, hash this here or in domain service
+      password: hashedPassword,
     });
 
     if (userOrError.isFailure) {

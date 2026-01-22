@@ -58,4 +58,19 @@ export class Habit extends AggregateRoot<HabitProps> {
 
     this.props.logs?.push(log);
   }
+
+  public updateTitle(title: string): void {
+    if (!title || title.length < 3) {
+      throw new Error('Title must be at least 3 chars');
+    }
+    this.props.title = title;
+  }
+
+  public updateDescription(description: string): void {
+    this.props.description = description;
+  }
+
+  public updateFrequency(frequency: HabitFrequency): void {
+    this.props.frequency = frequency;
+  }
 }

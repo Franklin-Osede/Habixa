@@ -58,7 +58,7 @@ export class McpService implements OnModuleInit {
   private setupTools() {
     // List Tools
     this.server.setRequestHandler(ListToolsRequestSchema, () => {
-      return Promise.resolve({
+      return {
         tools: [
           {
             name: 'create_habit',
@@ -99,7 +99,7 @@ export class McpService implements OnModuleInit {
             },
           },
         ],
-      });
+      };
     });
 
     // Call Tools
@@ -107,21 +107,29 @@ export class McpService implements OnModuleInit {
       try {
         switch (request.params.name) {
           case 'create_habit': {
-            const args = request.params.arguments as unknown as CreateHabitArgs;
+            const args = request.params.arguments;
+            if (!args || typeof args !== 'object') {
+              throw new Error('Invalid arguments for create_habit');
+            }
+            const habitArgs = args as unknown as CreateHabitArgs;
             const dto: CreateHabitDto = {
-              title: args.title,
-              description: args.description,
-              frequency: args.frequency,
-              userId: args.userId,
+              title: habitArgs.title,
+              description: habitArgs.description,
+              frequency: habitArgs.frequency,
+              userId: habitArgs.userId,
             };
 
             const result = await this.createHabitUseCase.execute(dto);
             if (result.isFailure) {
+              const errorMessage =
+                typeof result.error === 'string'
+                  ? result.error
+                  : JSON.stringify(result.error);
               return {
                 content: [
                   {
                     type: 'text',
-                    text: `Error: ${JSON.stringify(result.error)}`,
+                    text: `Error: ${errorMessage}`,
                   },
                 ],
                 isError: true,
@@ -138,21 +146,28 @@ export class McpService implements OnModuleInit {
           }
 
           case 'ingest_knowledge': {
-            const args = request.params
-              .arguments as unknown as IngestKnowledgeArgs;
+            const args = request.params.arguments;
+            if (!args || typeof args !== 'object') {
+              throw new Error('Invalid arguments for ingest_knowledge');
+            }
+            const knowledgeArgs = args as unknown as IngestKnowledgeArgs;
             const result = await this.ingestTextUseCase.execute({
-              content: args.content,
-              source: (args.source as SnippetSource) || 'manual',
-              tags: args.tags || [],
-              userId: args.userId,
+              content: knowledgeArgs.content,
+              source: (knowledgeArgs.source as SnippetSource) || 'manual',
+              tags: knowledgeArgs.tags || [],
+              userId: knowledgeArgs.userId,
             });
 
             if (result.isFailure) {
+              const errorMessage =
+                typeof result.error === 'string'
+                  ? result.error
+                  : JSON.stringify(result.error);
               return {
                 content: [
                   {
                     type: 'text',
-                    text: `Error: ${JSON.stringify(result.error)}`,
+                    text: `Error: ${errorMessage}`,
                   },
                 ],
                 isError: true,

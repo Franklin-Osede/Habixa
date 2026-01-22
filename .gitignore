@@ -25,6 +25,9 @@ temp/
 .env
 .env.*
 
+# Lint output files
+**/lint-output*.txt
+
 # NestJS
 apps/api/dist/
 apps/api/*.tsbuildinfo

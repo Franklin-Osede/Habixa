@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { IngestTextUseCase } from './ingest-text.use-case';
 import { KnowledgeRepository } from '../domain/repositories/knowledge.repository';
 import { IngestTextDto } from './dtos/ingest-text.dto';
@@ -11,7 +10,10 @@ describe('IngestTextUseCase', () => {
   beforeEach(() => {
     mockRepository = {
       save: jest.fn(),
-    };
+      findAllByUserId: jest.fn(),
+      findById: jest.fn(),
+      delete: jest.fn(),
+    } as unknown as KnowledgeRepository;
     useCase = new IngestTextUseCase(mockRepository);
   });
 

@@ -3,6 +3,7 @@ import { UseCase } from '../../../shared/domain/use-case.interface';
 import { Result } from '../../../shared/domain/result';
 import { DailyPlan } from '../domain/daily-plan.entity';
 import { UniqueEntityID } from '../../../shared/domain/unique-entity-id';
+import { PlanRepository } from '../domain/repositories/plan.repository';
 
 export class GenerateDailyPlanDto {
   userId!: string;
@@ -13,26 +14,39 @@ export class GenerateDailyPlanUseCase implements UseCase<
   GenerateDailyPlanDto,
   Promise<Result<DailyPlan>>
 > {
-  // In future: will inject PlanRepository and maybe AI Service
+  constructor(private readonly planRepository: PlanRepository) {}
 
-  execute(request: GenerateDailyPlanDto): Promise<Result<DailyPlan>> {
-    // 1. Check if plan already exists for today (mocked)
+  async execute(request: GenerateDailyPlanDto): Promise<Result<DailyPlan>> {
+    const date = new Date();
+
+    // 1. Check if plan already exists for today (Idempotency)
+    const existingPlan = await this.planRepository.findByUserIdAndDate(
+      request.userId,
+      date,
+    );
+
+    if (existingPlan) {
+      return Result.ok(existingPlan);
+    }
 
     // 2. Create new plan
     const planOrError = DailyPlan.create({
       userId: new UniqueEntityID(request.userId),
-      date: new Date(),
+      date: date,
     });
 
     if (planOrError.isFailure) {
-      return Promise.resolve(Result.fail(planOrError.error as string));
+      return Result.fail(planOrError.error as string);
     }
 
     const plan = planOrError.getValue();
 
     // 3. Populate with items (Logic to come from Rules/AI)
-    // For now, return empty or dummy plan
+    // For now, return empty
 
-    return Promise.resolve(Result.ok(plan));
+    // 4. Persist
+    await this.planRepository.save(plan);
+
+    return Result.ok(plan);
   }
 }

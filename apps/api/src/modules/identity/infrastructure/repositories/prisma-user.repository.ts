@@ -31,4 +31,45 @@ export class PrismaUserRepository implements UserRepository {
 
     return UserMapper.toDomain(user);
   }
+
+  async findById(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) return null;
+
+    return UserMapper.toDomain(user);
+  }
+
+  async saveProfile(userId: string, data: any): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    await this.prisma.userStats.upsert({
+      where: { userId: userId },
+      update: {
+        age: data.age,
+        weight: data.weight,
+        height: data.height,
+        activityLevel: data.activityLevel,
+        dietaryPreference: data.dietaryPreference,
+        goals: data.goals,
+        measurementSystem: data.measurementSystem,
+        integrations: data.integrations,
+      },
+      create: {
+        userId: userId,
+        age: data.age,
+        weight: data.weight,
+        height: data.height,
+        activityLevel: data.activityLevel,
+        dietaryPreference: data.dietaryPreference,
+        goals: data.goals,
+        measurementSystem: data.measurementSystem,
+        integrations: data.integrations,
+        xp: 0,
+        level: 1,
+        currentStreak: 0,
+      },
+    });
+  }
 }

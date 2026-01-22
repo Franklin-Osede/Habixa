@@ -1,22 +1,24 @@
 import { Entity } from './entity';
 import { UniqueEntityID } from './unique-entity-id';
 
+// Domain Event interface for type safety
+export interface DomainEvent {
+  dateTimeOccurred: Date;
+  getAggregateId(): UniqueEntityID;
+}
+
 export abstract class AggregateRoot<T> extends Entity<T> {
-  private _domainEvents: any[] = []; // We will implement DomainEvent later
+  private _domainEvents: DomainEvent[] = [];
 
-  // ...
-
-  /* eslint-disable @typescript-eslint/no-unsafe-return */
-  get domainEvents(): any[] {
+  get domainEvents(): DomainEvent[] {
     return this._domainEvents;
   }
-  /* eslint-enable @typescript-eslint/no-unsafe-return */
 
   constructor(props: T, id?: UniqueEntityID) {
     super(props, id);
   }
 
-  protected addDomainEvent(domainEvent: any): void {
+  protected addDomainEvent(domainEvent: DomainEvent): void {
     this._domainEvents.push(domainEvent);
     // Mark this aggregate for dispatch
     // DomainEvents.markAggregateForDispatch(this);

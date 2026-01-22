@@ -18,9 +18,11 @@ export class KnowledgeMapper {
     );
 
     if (snippetOrError.isFailure) {
-      throw new Error(
-        `Invalid snippet in DB: ${JSON.stringify(snippetOrError.error)}`,
-      );
+      const errorMessage =
+        typeof snippetOrError.error === 'string'
+          ? snippetOrError.error
+          : JSON.stringify(snippetOrError.error);
+      throw new Error(`Invalid snippet in DB: ${errorMessage}`);
     }
 
     return snippetOrError.getValue();

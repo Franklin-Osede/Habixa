@@ -32,6 +32,17 @@ model UserStats {
   id             String   @id @default(uuid())
   userId         String   @unique
   user           User     @relation(fields: [userId], references: [id])
+  // Onboarding / Profile Data
+  age            Int?
+  weight         Float?   // in kg (always stored in metric)
+  height         Float?   // in cm (always stored in metric)
+  activityLevel  String?  // sedentary, active, etc
+  dietaryPreference String? // vegan, keto, etc
+  goals          String[] // ["lose_weight", "marathon"]
+  measurementSystem String @default("metric") // "metric" or "imperial"
+  integrations   Json?    // { "appleHealth": true, "googleFit": false }
+  
+  // Gamification
   xp             Int      @default(0)
   level          Int      @default(1)
   currentStreak  Int      @default(0)
