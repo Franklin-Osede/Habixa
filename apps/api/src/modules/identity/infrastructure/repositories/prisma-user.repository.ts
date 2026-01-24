@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { UserRepository } from '../../domain/repositories/user.repository';
+import {
+  UserRepository,
+  UserProfileData,
+} from '../../domain/repositories/user.repository';
 import { User } from '../../domain/user.entity';
 import { PrismaService } from '../../../../common/prisma.service'; // Assuming it exists or I create it
 import { UserMapper } from '../mappers/user.mapper';
@@ -42,8 +45,7 @@ export class PrismaUserRepository implements UserRepository {
     return UserMapper.toDomain(user);
   }
 
-  async saveProfile(userId: string, data: any): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  async saveProfile(userId: string, data: UserProfileData): Promise<void> {
     await this.prisma.userStats.upsert({
       where: { userId: userId },
       update: {

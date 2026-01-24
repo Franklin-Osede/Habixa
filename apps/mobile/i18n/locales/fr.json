@@ -3,7 +3,7 @@
     "welcome": "Bienvenue",
     "loading": "Chargement...",
     "error": "Erreur",
-    "save": "Enregistrer",
+    "save": "Sauvegarder",
     "cancel": "Annuler",
     "back": "Retour"
   },
@@ -11,15 +11,49 @@
     "login": "Connexion",
     "register": "S'inscrire",
     "logout": "Déconnexion",
-    "email": "Email",
+    "email": "E-mail",
     "password": "Mot de passe",
     "signIn": "Se connecter",
-    "signUp": "Créer un compte",
-    "noAccount": "Pas de compte ?",
-    "hasAccount": "Vous avez déjà un compte ?"
+    "signUp": "S'inscrire",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "welcomeBack": "Bon retour",
+    "coachWaiting": "Votre coach IA vous attend",
+    "forgotPassword": "Mot de passe oublié ?",
+    "continueWith": "Ou continuer avec",
+    "agreeTerms": "En continuant, vous acceptez nos conditions"
   },
-  "home": {
-    "title": "Votre Plan Aujourd'hui",
-    "generatePlan": "Générer Plan"
+  "welcome": {
+    "headline": "Créez des habitudes,\nsans effort.",
+    "subheadline": "Votre coach personnel IA de poche.",
+    "getStarted": "Commencer",
+    "haveAccount": "J'ai un compte",
+    "streak": "Série de 7 jours",
+    "aiPowered": "Alimenté par l'IA",
+    "selectLanguage": "Choisissez votre langue"
+  },
+  "onboarding": {
+    "step1": {
+      "progress": "Étape 1 sur 3",
+      "headlineStart": "Quel est votre",
+      "headlineAccent": "objectif principal ?",
+      "definePurpose": "Définissez votre but",
+      "placeholder": "Je veux...",
+      "units": "Unités",
+      "metric": "Métrique",
+      "imperial": "Impérial",
+      "age": "Âge",
+      "years": "ans",
+      "weight": "Poids",
+      "height": "Taille",
+      "next": "Suivant",
+      "nextSimple": "Suivant"
+    },
+    "tags": {
+      "loseWeight": "Perdre du poids",
+      "buildMuscle": "Se muscler",
+      "energy": "Énergie",
+      "mindfulness": "Pleine conscience"
+    }
   }
 }

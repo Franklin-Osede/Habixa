@@ -10,16 +10,50 @@
   "auth": {
     "login": "Accedi",
     "register": "Registrati",
-    "logout": "Disconnetti",
+    "logout": "Esci",
     "email": "Email",
     "password": "Password",
-    "signIn": "Entra",
-    "signUp": "Crea Account",
+    "signIn": "Accedi",
+    "signUp": "Iscriviti",
     "noAccount": "Non hai un account?",
-    "hasAccount": "Hai già un account?"
+    "hasAccount": "Hai già un account?",
+    "welcomeBack": "Bentornato",
+    "coachWaiting": "Il tuo coach AI ti sta aspettando",
+    "forgotPassword": "Password dimenticata?",
+    "continueWith": "O continua con",
+    "agreeTerms": "Continuando, accetti i nostri Termini"
   },
-  "home": {
-    "title": "Il Tuo Piano Oggi",
-    "generatePlan": "Genera Piano"
+  "welcome": {
+    "headline": "Costruisci abitudini,\nsenza sforzo.",
+    "subheadline": "Il tuo personal coach AI tascabile.",
+    "getStarted": "Inizia",
+    "haveAccount": "Ho un account",
+    "streak": "Serie di 7 giorni",
+    "aiPowered": "Potenziato da AI",
+    "selectLanguage": "Seleziona la tua lingua"
+  },
+  "onboarding": {
+    "step1": {
+      "progress": "Passo 1 di 3",
+      "headlineStart": "Qual è il tuo",
+      "headlineAccent": "obiettivo principale?",
+      "definePurpose": "Definisci il tuo scopo",
+      "placeholder": "Voglio...",
+      "units": "Unità",
+      "metric": "Metrico",
+      "imperial": "Imperiale",
+      "age": "Età",
+      "years": "anni",
+      "weight": "Peso",
+      "height": "Altezza",
+      "next": "Avanti",
+      "nextSimple": "Avanti"
+    },
+    "tags": {
+      "loseWeight": "Perdere peso",
+      "buildMuscle": "Costruire muscoli",
+      "energy": "Energia",
+      "mindfulness": "Consapevolezza"
+    }
   }
 }

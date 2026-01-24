@@ -7,7 +7,7 @@ export class UserMapper {
     const userOrError = User.create(
       {
         email: raw.email,
-        password: raw.password,
+        password: (raw as unknown as { password: string }).password,
       },
       new UniqueEntityID(raw.id),
     );
@@ -25,8 +25,22 @@ export class UserMapper {
       id: user.id.toString(),
       email: user.email,
       password: user.password,
-      createdAt: new Date(), // These would usually be handled by DB or existing props
+      createdAt: new Date(),
       updatedAt: new Date(),
-    };
+      name: null,
+      weight: null,
+      height: null,
+      age: null,
+      gender: null,
+      activityLevel: null,
+      experienceLevel: null,
+      equipment: null,
+      goals: [],
+      allergies: [],
+      level: 1,
+      xp: 0,
+      streakCurrent: 0,
+      currentDayIndex: 1,
+    } as unknown as PrismaUser;
   }
 }

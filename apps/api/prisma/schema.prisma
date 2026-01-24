@@ -1,120 +1,253 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
+  // previewFeatures = ["postgresqlExtensions"] 
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // extensions = [vector]
 }
 
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String
+  name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  dailyPlans       DailyPlan[]
-  habits           Habit[]
-  knowledgeSnippets KnowledgeSnippet[]
-  stats            UserStats?
+  // Profile - Needed for The Logic
+  weight          Float?
+  height          Float?
+  age             Int?
+  gender          String?
+  activityLevel   String? 
+  experienceLevel String? // Beginner, Intermediate, Advanced
+  equipment       String? // Gym, Home, Bodyweight
 
-  @@map("users")
+  goals           String[]
+  allergies       String[]
+
+  // Gamification & Progress
+  level           Int      @default(1)
+  xp              Int      @default(0)
+  streakCurrent   Int      @default(0)
+  currentDayIndex Int      @default(1) // Determines Phase (1-60, etc.)
+
+  // Relations
+  workouts      WorkoutLog[]
+  nutritionLogs NutritionLog[]
+  plans         PlanDay[]
+
+  // Fixed Relations
+  userStats     UserStats?
+  habits        Habit[]
+  dailyPlans    DailyPlan[]
+  knowledge     KnowledgeSnippet[]
+  password      String
 }
 
-model UserStats {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id])
-  // Onboarding / Profile Data
-  age            Int?
-  weight         Float?   // in kg (always stored in metric)
-  height         Float?   // in cm (always stored in metric)
-  activityLevel  String?  // sedentary, active, etc
-  dietaryPreference String? // vegan, keto, etc
-  goals          String[] // ["lose_weight", "marathon"]
-  measurementSystem String @default("metric") // "metric" or "imperial"
-  integrations   Json?    // { "appleHealth": true, "googleFit": false }
+// --- WORKOUT ENGINE ---
+
+model WorkoutBlock {
+  id          String   @id @default(uuid())
+  code        String   @unique // "A01", "B07"
+  category    String   // "Low Impact", "CrossFit", "HIIT", "Strength", "Express"
+  title       String
+  description String
+  durationMin Int
   
-  // Gamification
-  xp             Int      @default(0)
-  level          Int      @default(1)
-  currentStreak  Int      @default(0)
-  longestStreak  Int      @default(0)
-  lastActivityDate DateTime? 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@map("user_stats")
+  // JSON structure for exercises to allow flexibility (AMRAP, EMOM structures)
+  // Example: { type: "EMOM", minutes: 24, movements: [...] }
+  structure   Json 
+  
+  workouts    PlanDay[]
 }
 
-model DailyPlan {
+model WorkoutLog {
   id        String   @id @default(uuid())
-  date      DateTime
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  items     PlanItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("daily_plans")
-  @@unique([userId, date])
+  
+  workoutBlockId String
+  date      DateTime @default(now())
+  
+  proofImageUri String?
+  notes         String?
+  xpEarned      Int
 }
 
-model PlanItem {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  isCompleted Boolean  @default(false)
-  planId      String
-  plan        DailyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// --- NUTRITION ENGINE ---
 
-  @@map("plan_items")
+model MealTemplate {
+  id          String   @id @default(uuid())
+  code        String   @unique // "TEMPLATE_A", "TEMPLATE_B"
+  goal        String   // "Fat Loss Aggressive", "Muscle Gain"
+  
+  // JSON defining the structure
+  // Example: { breakfast: ["Protein", "Carb"], lunch: ["Protein", "Carb", "Veg"] }
+  structure   Json
+  
+  plans       PlanDay[]
+}
+
+model Ingredient {
+  id          String   @id @default(uuid())
+  name        String   // "Chicken Breast"
+  category    String   // "Protein", "Carb", "Fat", "Veg"
+  caloriesPer100g Int
+  isVegan     Boolean  @default(false)
+  
+  // Relations
+  partnerProducts PartnerProduct[]
+  recipes         Recipe[] @relation("RecipeIngredients")
+}
+
+model Recipe {
+  id          String   @id @default(uuid())
+  title       String   // "Vegan Curry"
+  instructions String  // "1. Chop onions..."
+  calories    Int
+  protein     Int
+  carbs       Int
+  fats        Int
+  imageUrl    String?
+  
+  isVegan     Boolean  @default(false)
+  isGlutenFree Boolean @default(false)
+
+  ingredients Ingredient[] @relation("RecipeIngredients")
+}
+
+model NutritionLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  date      DateTime @default(now())
+  mealType  String
+  proofImageUri String?
+  isVerified Boolean @default(false)
+}
+
+// --- MINDSET & DAILY ---
+
+model Quote {
+  id          String   @id @default(uuid())
+  text        String
+  author      String
+  tags        String[] // ["Motivation", "Discipline"]
+}
+
+// --- DAILY GENERATED PLAN ---
+
+model PlanDay {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  date      DateTime
+  dayIndex  Int      // 1-365
+  phase     Int      // 1, 2, 3, 4
+  
+  // Assigned Content
+  workoutBlockId String?
+  workoutBlock   WorkoutBlock? @relation(fields: [workoutBlockId], references: [id])
+  
+  mealTemplateId String?
+  mealTemplate   MealTemplate? @relation(fields: [mealTemplateId], references: [id])
+  
+  // Generated Specifics (The specific exercises/ingredients chosen for this user today)
+  generatedWorkout Json? 
+  generatedMeals   Json?
+  
+  isCompleted Boolean @default(false)
+  isUnlocked  Boolean @default(false)
+}
+
+// --- PARTNERSHIPS ---
+
+model PartnerProduct {
+  id          String   @id @default(uuid())
+  brand       String   // "HSN"
+  name        String   // "Evowhey 2.0"
+  linkUrl     String
+  isActive    Boolean  @default(false)
+  
+  ingredientId String?
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
+}
+
+// --- MISSING MODELS RESTORED ---
+
+model UserStats {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  xp              Int      @default(0)
+  level           Int      @default(1)
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastActivityDate DateTime? @default(now())
+
+  // Profile Data
+  age               Int?
+  weight            Float?
+  height            Float?
+  activityLevel     String?
+  dietaryPreference String?
+  goals             String[]
+  measurementSystem String?  // Metric/Imperial
+  integrations      Json?
 }
 
 model Habit {
-  id          String     @id @default(uuid())
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
   title       String
   description String?
-  frequency   String     // daily, weekly
-  userId      String
-  user        User       @relation(fields: [userId], references: [id])
+  frequency   String 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   logs        HabitLog[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  @@map("habits")
 }
 
 model HabitLog {
   id          String   @id @default(uuid())
   habitId     String
-  habit       Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  habit       Habit    @relation(fields: [habitId], references: [id])
   date        DateTime
   isCompleted Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+}
 
-  @@map("habit_logs")
+model DailyPlan {
+    id        String   @id @default(uuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id])
+    date      DateTime
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    items     PlanItem[]
+}
+
+model PlanItem {
+    id          String   @id @default(uuid())
+    planId      String
+    dailyPlan   DailyPlan @relation(fields: [planId], references: [id])
+    title       String
+    description String?
+    isCompleted Boolean @default(false)
 }
 
 model KnowledgeSnippet {
   id        String   @id @default(uuid())
-  content   String
-  tags      String[]
-  source    String   // manual, url, file
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  content   String
+  tags      String[]
+  source    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@map("knowledge_snippets")
 }
+

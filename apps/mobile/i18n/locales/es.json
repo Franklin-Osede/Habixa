@@ -5,30 +5,157 @@
     "error": "Error",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "back": "Atrás"
+    "back": "Volver",
+    "daysPassed": "días pasados",
+    "daysLeft": "días restantes",
+    "months": {
+      "jan": "Ene", "feb": "Feb", "mar": "Mar", "apr": "Abr", "may": "May", "jun": "Jun",
+      "jul": "Jul", "aug": "Ago", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dic"
+    }
   },
   "auth": {
-    "login": "Iniciar Sesión",
+    "login": "Iniciar sesión",
     "register": "Registrarse",
-    "logout": "Cerrar Sesión",
-    "email": "Correo Electrónico",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
     "password": "Contraseña",
-    "signIn": "Entrar",
-    "signUp": "Crear Cuenta",
-    "noAccount": "¿No tienes cuenta?",
+    "signIn": "Ingresar",
+    "signUp": "Regístrate",
+    "noAccount": "¿No tienes una cuenta?",
     "hasAccount": "¿Ya tienes una cuenta?",
-    "welcomeBack": "Hola de nuevo",
-    "coachWaiting": "Tu coach IA te espera",
+    "welcomeBack": "Bienvenido de nuevo",
+    "coachWaiting": "Tu entrenador de IA te espera",
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "continueWith": "O continúa con",
     "agreeTerms": "Al continuar, aceptas nuestros Términos"
   },
   "welcome": {
     "headline": "Crea Hábitos,\nSin Esfuerzo.",
-    "subheadline": "Tu entrenador personal de bolsillo con IA.",
-    "getStarted": "Empezar",
+    "subheadline": "Tu entrenador personal de IA de bolsillo.",
+    "getStarted": "Comenzar",
     "haveAccount": "Ya tengo cuenta",
-    "streak": "Racha de 7 Días",
-    "aiPowered": "Potenciado por IA"
+    "streak": "Racha de 7 días",
+    "aiPowered": "Potenciado por IA",
+    "selectLanguage": "Selecciona tu idioma"
+  },
+  "onboarding": {
+    "step1": {
+      "progress": "Paso 1 de 3",
+      "headlineStart": "¿Cuál es tu",
+      "headlineAccent": "objetivo principal?",
+      "definePurpose": "Define tu propósito",
+      "placeholder": "Quiero...",
+      "units": "Unidades",
+      "metric": "Métrico",
+      "imperial": "Imperial",
+      "age": "Edad",
+      "years": "años",
+      "weight": "Peso",
+      "height": "Altura",
+      "next": "Siguiente: La Auditoría",
+      "nextSimple": "Siguiente"
+    },
+    "step2": {
+      "progress": "Paso 2 de 3",
+      "headlineStart": "Tu",
+      "headlineAccent": "Auditoría de Salud",
+      "bmiLabel": "Tu IMC",
+      "bmiResult": "Masa Corporal (IMC)",
+      "underweight": "Bajo peso",
+      "normal": "Saludable",
+      "overweight": "Sobrepeso",
+      "obese": "Obesidad",
+      "habitsTitle": "Selecciona tus hábitos",
+      "goalsTitle": "¿Cuáles son tus objetivos?",
+      "info": "No te preocupes, siempre puedes ajustar estas preferencias más tarde en la configuración.",
+      "bmiFormula": "IMC = Peso(kg) / Altura(m)²",
+      "next": "Siguiente: Nutrición"
+    },
+    "step3": {
+      "progress": "Paso 3 de 5",
+      "headlineStart": "Optimiza tu",
+      "headlineAccent": "Horario",
+      "sleepTitle": "Horario de Sueño",
+      "wakeUp": "Despertar",
+      "bedtime": "Dormir",
+      "workTitle": "Horario Laboral",
+      "workStart": "Inicio",
+      "workEnd": "Fin",
+      "freeTimeTitle": "Bloques Libres",
+      "morning": "Mañana",
+      "afternoon": "Tarde",
+      "evening": "Noche",
+      "next": "Siguiente: Nutrición"
+    },
+    "step4": {
+      "progress": "Paso 4 de 5",
+      "headlineStart": "Alimenta tu",
+      "headlineAccent": "Cuerpo",
+      "dietTitle": "Tipo de Dieta",
+      "allergiesTitle": "Alergias e Intolerancias",
+      "mealsTitle": "Comidas Diarias",
+      "typicalDiet": "Dieta Típica (Semanal)",
+      "scanLabel": "Escanear Etiqueta",
+      "days": {
+        "monday": "Lunes",
+        "tuesday": "Martes",
+        "wednesday": "Miércoles",
+        "thursday": "Jueves",
+        "friday": "Viernes",
+        "saturday": "Sábado",
+        "sunday": "Domingo"
+      },
+      "next": "Siguiente: Visión Anual"
+    },
+    "diets": {
+      "standard": "Estándar",
+      "vegan": "Vegana",
+      "vegetarian": "Vegetariana",
+      "keto": "Keto",
+      "paleo": "Paleo"
+    },
+    "allergies": {
+      "gluten": "Gluten",
+      "dairy": "Lácteos",
+      "nuts": "Frutos Secos",
+      "shellfish": "Mariscos",
+      "soy": "Soja",
+      "none": "Ninguna"
+    },
+    "step5": {
+      "progress": "Paso 5 de 5",
+      "headlineStart": "Visión",
+      "headlineAccent": "Anual",
+      "subtitle": "Visualiza tu año. Cada punto te ayuda a seguir tu viaje.",
+      "focusTitle": "Enfoque Anual",
+      "focus1": "Productividad",
+      "focus2": "Salud",
+      "focus3": "Mindfulness",
+      "launchTitle": "Lanzamiento",
+      "complete": "Completar Setup",
+      "finalMsg": "Paso final para activar tu año"
+    },
+    "tags": {
+      "loseWeight": "Perder Peso",
+      "buildMuscle": "Ganar Músculo",
+      "energy": "Energía",
+      "mindfulness": "Mindfulness"
+    },
+    "habits": {
+      "exercise": "Ejercicio Diario",
+      "meditation": "Meditación",
+      "reading": "Lectura",
+      "water": "Consumo de Agua",
+      "sleep": "Horario de Sueño",
+      "diet": "Alimentación Saludable"
+    },
+    "goals": {
+      "weight": "Control de Peso",
+      "mental": "Claridad Mental",
+      "sleep": "Mejor Sueño",
+      "energy": "Más Energía",
+      "stress": "Reducción de Estrés",
+      "productivity": "Aumento de Productividad"
+    }
   }
 }

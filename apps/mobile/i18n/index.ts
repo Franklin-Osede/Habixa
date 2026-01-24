@@ -1,12 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { getLocales } from 'expo-localization';
+
 
 import en from './locales/en.json';
 import es from './locales/es.json';
 import it from './locales/it.json';
 import fr from './locales/fr.json';
 import de from './locales/de.json';
+import pt from './locales/pt.json';
 
 const resources = {
   en: { translation: en },
@@ -14,10 +15,11 @@ const resources = {
   it: { translation: it },
   fr: { translation: fr },
   de: { translation: de },
+  pt: { translation: pt },
 };
 
 const initI18n = async () => {
-  const deviceLanguage = getLocales()[0]?.languageCode ?? 'en';
+
 
   await i18n.use(initReactI18next).init({
     resources,

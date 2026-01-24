@@ -4,12 +4,13 @@ export const Colors = {
   onPrimary: '#102316',      // Dark text on green button
 
   // Backgrounds (Gradient strategy)
-  backgroundDark: '#102216', // Deep Forest Green (Main BG)
+  backgroundDark: '#15241a', // Lighter dark green (Main BG) - adjusted for better visibility
   backgroundLight: '#f5f8f6',// Almost White (Light Mode fallback)
   
   // Surfaces (Cards, Modals)
   surface: '#183422',        // Slightly lighter green-black
-  surfaceBorder: '#316843',  // Border for glass effect
+  cardDark: '#162b1d',        // Card dark background (from HTML: card-dark)
+  surfaceBorder: '#316843',  // Border for glass effect (from HTML: dark:border-[#316843])
   surfaceHighlight: 'rgba(255, 255, 255, 0.05)',
 
   // Typography

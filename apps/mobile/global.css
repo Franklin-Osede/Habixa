@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Theme overrides for dark green aesthetic */
+/* Keep these minimal to avoid breaking TailwindCSS utility classes */
+
+/* Body and root - force dark green background */
+html,
+body,
+#root {
+  background-color: #15241a !important;
+  color: #ffffff !important;
+  min-height: 100vh !important;
+  min-width: 100vw !important;
+}
+
+/* React Navigation Stack container - be more specific */
+[data-react-native-root] {
+  background-color: #15241a !important;
+}
+
+/* REMOVED: Overly aggressive div selector that was breaking bg-primary */
+/* This was preventing TailwindCSS classes like bg-primary from working */
+
+/* Override React Navigation theme colors - more specific selectors */
+[class*="navigation"],
+[class*="Navigation"] {
+  background-color: #15241a !important;
+}
+
+/* Override specific Tailwind background utilities that conflict with theme */
+.bg-white,
+.bg-slate-50,
+.bg-gray-50,
+.bg-gray-100 {
+  background-color: #15241a !important;
+}
+
+/* Force text colors for readability */
+.text-gray-900,
+.text-slate-900,
+.text-black {
+  color: #ffffff !important;
+}
+

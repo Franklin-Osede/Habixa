@@ -14,12 +14,46 @@
     "email": "E-Mail",
     "password": "Passwort",
     "signIn": "Einloggen",
-    "signUp": "Konto erstellen",
-    "noAccount": "Kein Konto?",
-    "hasAccount": "Haben Sie bereits ein Konto?"
+    "signUp": "Anmelden",
+    "noAccount": "Hast du noch kein Konto?",
+    "hasAccount": "Hast du bereits ein Konto?",
+    "welcomeBack": "Willkommen zurück",
+    "coachWaiting": "Dein KI-Coach wartet auf dich",
+    "forgotPassword": "Passwort vergessen?",
+    "continueWith": "Oder weiter mit",
+    "agreeTerms": "Wenn Sie fortfahren, stimmen Sie unseren Geschäftsbedingungen zu"
   },
-  "home": {
-    "title": "Ihr Plan Heute",
-    "generatePlan": "Plan Erstellen"
+  "welcome": {
+    "headline": "Gewohnheiten aufbauen,\nmühelos.",
+    "subheadline": "Dein persönlicher KI-Coach für die Hosentasche.",
+    "getStarted": "Loslegen",
+    "haveAccount": "Ich habe ein Konto",
+    "streak": "7-Tage-Serie",
+    "aiPowered": "KI-unterstützt",
+    "selectLanguage": "Wähle deine Sprache"
+  },
+  "onboarding": {
+    "step1": {
+      "progress": "Schritt 1 von 3",
+      "headlineStart": "Was ist dein",
+      "headlineAccent": "Hauptziel?",
+      "definePurpose": "Definiere dein Ziel",
+      "placeholder": "Ich möchte...",
+      "units": "Einheiten",
+      "metric": "Metrisch",
+      "imperial": "Imperial",
+      "age": "Alter",
+      "years": "Jahre",
+      "weight": "Gewicht",
+      "height": "Größe",
+      "next": "Weiter",
+      "nextSimple": "Weiter"
+    },
+    "tags": {
+      "loseWeight": "Abnehmen",
+      "buildMuscle": "Muskeln aufbauen",
+      "energy": "Energie",
+      "mindfulness": "Achtsamkeit"
+    }
   }
 }

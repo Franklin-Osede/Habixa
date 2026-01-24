@@ -2,7 +2,7 @@
 
 # Define Ports
 API_PORT=3008
-WEB_PORT=4214
+WEB_PORT=4216
 
 echo "🚀 Starting Habixa (AgentsMinds)..."
 echo "Backend Port: $API_PORT"

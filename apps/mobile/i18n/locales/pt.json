@@ -1,0 +1,59 @@
+{
+  "common": {
+    "welcome": "Bem-vindo",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "back": "Voltar"
+  },
+  "auth": {
+    "login": "Entrar",
+    "register": "Registrar",
+    "logout": "Sair",
+    "email": "E-mail",
+    "password": "Senha",
+    "signIn": "Entrar",
+    "signUp": "Inscrever-se",
+    "noAccount": "Não tem uma conta?",
+    "hasAccount": "Já tem uma conta?",
+    "welcomeBack": "Bem-vindo de volta",
+    "coachWaiting": "Seu treinador de IA está esperando por você",
+    "forgotPassword": "Esqueceu a senha?",
+    "continueWith": "Ou continue com",
+    "agreeTerms": "Ao continuar, você concorda com nossos Termos"
+  },
+  "welcome": {
+    "headline": "Crie Hábitos,\nSem Esforço.",
+    "subheadline": "Seu treinador pessoal de IA de bolso.",
+    "getStarted": "Começar",
+    "haveAccount": "Tenho uma conta",
+    "streak": "Sequência de 7 dias",
+    "aiPowered": "Alimentado por IA",
+    "selectLanguage": "Selecione seu idioma"
+  },
+  "onboarding": {
+    "step1": {
+      "progress": "Passo 1 de 3",
+      "headlineStart": "Qual é o seu",
+      "headlineAccent": "objetivo principal?",
+      "definePurpose": "Defina seu propósito",
+      "placeholder": "Eu quero...",
+      "units": "Unidades",
+      "metric": "Métrico",
+      "imperial": "Imperial",
+      "age": "Idade",
+      "years": "anos",
+      "weight": "Peso",
+      "height": "Altura",
+      "next": "Próximo",
+      "nextSimple": "Próximo"
+    },
+    "tags": {
+      "loseWeight": "Perder peso",
+      "buildMuscle": "Ganhar músculo",
+      "energy": "Energia",
+      "mindfulness": "Mindfulness"
+    }
+  }
+}

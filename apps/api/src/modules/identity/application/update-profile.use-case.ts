@@ -6,7 +6,7 @@ import { Result } from '../../../shared/domain/result';
 @Injectable()
 export class UpdateProfileUseCase {
   constructor(
-    @Inject('UserRepository') private userRepository: UserRepository,
+    @Inject(UserRepository) private userRepository: UserRepository,
   ) {}
 
   async execute(userId: string, dto: UpdateProfileDto): Promise<Result<void>> {
@@ -26,6 +26,10 @@ export class UpdateProfileUseCase {
     // we will delegate the persistence to the repository's 'saveProfile' method 
     // which we will add.
 
+    const integrationsList = dto.integrations
+      ? Object.keys(dto.integrations).filter((key) => dto.integrations![key])
+      : undefined;
+
     await this.userRepository.saveProfile(userId, {
       age: dto.age,
       weight: dto.weight,
@@ -34,11 +38,7 @@ export class UpdateProfileUseCase {
       dietaryPreference: dto.dietaryPreference,
       goals: dto.goals ?? [],
       measurementSystem: dto.measurementSystem ?? 'metric',
-      integrations: dto.integrations,
-      userId: userId,
-      xp: 0, // defaults if creating new
-      level: 1,
-      currentStreak: 0,
+      integrations: integrationsList,
     });
 
     return Result.ok();

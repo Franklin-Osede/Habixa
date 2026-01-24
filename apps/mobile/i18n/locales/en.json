@@ -5,7 +5,13 @@
     "error": "Error",
     "save": "Save",
     "cancel": "Cancel",
-    "back": "Back"
+    "back": "Back",
+    "daysPassed": "days passed",
+    "daysLeft": "days left",
+    "months": {
+      "jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun",
+      "jul": "Jul", "aug": "Aug", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dec"
+    }
   },
   "auth": {
     "login": "Login",
@@ -29,6 +35,127 @@
     "getStarted": "Get Started",
     "haveAccount": "I have an account",
     "streak": "7 Day Streak",
-    "aiPowered": "AI Powered"
+    "aiPowered": "AI Powered",
+    "selectLanguage": "Select your language"
+  },
+  "onboarding": {
+    "step1": {
+      "progress": "Step 1 of 3",
+      "headlineStart": "What is your",
+      "headlineAccent": "main goal?",
+      "definePurpose": "Define your purpose",
+      "placeholder": "I want to...",
+      "units": "Units",
+      "metric": "Metric",
+      "imperial": "Imperial",
+      "age": "Age",
+      "years": "years",
+      "weight": "Weight",
+      "height": "Height",
+      "next": "Next: The Audit",
+      "nextSimple": "Next"
+    },
+    "step2": {
+      "progress": "Step 2 of 3",
+      "headlineStart": "Your",
+      "headlineAccent": "Health Audit",
+      "bmiLabel": "Your BMI",
+      "bmiResult": "Body Mass Index (BMI)",
+      "underweight": "Underweight",
+      "normal": "Healthy",
+      "overweight": "Overweight",
+      "obese": "Obese",
+      "habitsTitle": "Select your habits",
+      "goalsTitle": "What are your goals?",
+      "info": "Don't worry, you can always adjust these preferences later in settings.",
+      "bmiFormula": "BMI = Weight(kg) / Height(m)²",
+      "next": "Next: Nutrition"
+    },
+    "step3": {
+      "progress": "Step 3 of 5",
+      "headlineStart": "Optimize your",
+      "headlineAccent": "Schedule",
+      "sleepTitle": "Sleep Schedule",
+      "wakeUp": "Wake Up",
+      "bedtime": "Bedtime",
+      "workTitle": "Work Hours",
+      "workStart": "Start",
+      "workEnd": "End",
+      "freeTimeTitle": "Free Time Blocks",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening",
+      "next": "Next: Nutrition"
+    },
+    "step4": {
+      "progress": "Step 4 of 5",
+      "headlineStart": "Fuel your",
+      "headlineAccent": "Body",
+      "dietTitle": "Diet Type",
+      "allergiesTitle": "Allergies & Intolerances",
+      "mealsTitle": "Daily Meals",
+      "typicalDiet": "Typical Diet (Weekly)",
+      "scanLabel": "Scan Label",
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "next": "Next: Yearly Vision"
+    },
+    "diets": {
+      "standard": "Standard",
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "keto": "Keto",
+      "paleo": "Paleo"
+    },
+    "allergies": {
+      "gluten": "Gluten",
+      "dairy": "Dairy",
+      "nuts": "Nuts",
+      "shellfish": "Shellfish",
+      "soy": "Soy",
+      "none": "None"
+    },
+    "step5": {
+      "progress": "Step 5 of 5",
+      "headlineStart": "Yearly",
+      "headlineAccent": "Vision",
+      "subtitle": "Visualize your year. Every dot helps you track your journey.",
+      "focusTitle": "Yearly Focus",
+      "focus1": "Productivity",
+      "focus2": "Health",
+      "focus3": "Mindfulness",
+      "launchTitle": "Selected Launch",
+      "complete": "Complete Setup",
+      "finalMsg": "Final step to activate your year"
+    },
+    "tags": {
+      "loseWeight": "Lose Weight",
+      "buildMuscle": "Build Muscle",
+      "energy": "Energy",
+      "mindfulness": "Mindfulness"
+    },
+    "habits": {
+      "exercise": "Daily Exercise",
+      "meditation": "Meditation",
+      "reading": "Reading",
+      "water": "Drink Water",
+      "sleep": "Sleep Schedule",
+      "diet": "Healthy Diet"
+    },
+    "goals": {
+      "weight": "Weight Control",
+      "mental": "Mental Clarity",
+      "sleep": "Better Sleep",
+      "energy": "More Energy",
+      "stress": "Stress Reduction",
+      "productivity": "Productivity"
+    }
   }
 }
