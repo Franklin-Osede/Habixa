@@ -23,10 +23,10 @@ echo "Starting Habixa API..."
 API_DIR="apps/api"
 check_and_install "$API_DIR" "API"
 
-# Start API
-echo "Starting API..."
+# Start API on port 3008
+echo "Starting API on port 3008..."
 cd "$API_DIR" || exit
-pnpm run start:dev > ../../api.log 2>&1 &
+PORT=3008 pnpm run start:dev > ../../api.log 2>&1 &
 API_PID=$!
 echo $API_PID > ../../api.pid
 cd - > /dev/null || exit

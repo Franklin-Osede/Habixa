@@ -23,10 +23,10 @@ echo "Starting Habixa Mobile..."
 MOBILE_DIR="apps/mobile"
 check_and_install "$MOBILE_DIR" "Mobile"
 
-# Start Mobile
-echo "Starting Mobile on port 4216..."
+# Start Mobile (web:dev = watch mode + Fast Refresh so you see changes without reloading)
+echo "Starting Mobile on port 4216 (watch mode)..."
 cd "$MOBILE_DIR" || exit
-npx expo start --port 4216 > ../../mobile.log 2>&1 &
+pnpm run web:dev > ../../mobile.log 2>&1 &
 MOBILE_PID=$!
 echo $MOBILE_PID > ../../mobile.pid
 cd - > /dev/null || exit

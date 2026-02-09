@@ -9,10 +9,17 @@ datasource db {
   // extensions = [vector]
 }
 
+enum Role {
+  USER
+  ADMIN
+  COACH
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
+  role      Role     @default(USER) // RBAC Security Layer
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -44,6 +51,11 @@ model User {
   habits        Habit[]
   dailyPlans    DailyPlan[]
   knowledge     KnowledgeSnippet[]
+  
+  // Gamification Relations
+  progress      UserProgress[]
+  dailyTasks    DailyUserTask[]
+
   password      String
 }
 
@@ -57,10 +69,12 @@ model WorkoutBlock {
   description String
   durationMin Int
   
-  // JSON structure for exercises to allow flexibility (AMRAP, EMOM structures)
-  // Example: { type: "EMOM", minutes: 24, movements: [...] }
+  // JSON structure for exercises (Flexible legacy)
   structure   Json 
   
+  // Normalized Structure (The "Visual" Way)
+  items       WorkoutItem[]
+
   workouts    PlanDay[]
 }
 
@@ -189,6 +203,7 @@ model UserStats {
   currentStreak   Int      @default(0)
   longestStreak   Int      @default(0)
   lastActivityDate DateTime? @default(now())
+  gems            Int      @default(0)  // Economía: comprar Streak Freeze, etc.
 
   // Profile Data
   age               Int?
@@ -251,3 +266,104 @@ model KnowledgeSnippet {
   updatedAt DateTime @updatedAt
 }
 
+// ... (Existing schema above)
+
+// --- EXPERT CONTENT (Your Knowledge) ---
+
+model Exercise {
+  id          String   @id @default(uuid())
+  name        String   @unique // "Squat"
+  description String?
+  videoUrl    String?  // URL to your specific visual/video
+  thumbnailUrl String?
+  
+  // Your "Personal Trainer" Touch
+  expertCues  String?  // "Keep chest up, drive knees out"
+  
+  difficulty  String   // Beginner, Intermediate, Advanced
+  muscleGroup String   // Legs, Chest, Back
+  
+  // Relations
+  workoutItems WorkoutItem[]
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+  title       String   // "30 Day Fat Loss"
+  description String
+  durationDays Int
+  rewardPoints Int
+  
+  // "Unlocks" logic
+  prerequisiteId String?
+  prerequisite   Challenge? @relation("Unlocks", fields: [prerequisiteId], references: [id])
+  unlocks        Challenge[] @relation("Unlocks")
+
+  // Content
+  tasks       DailyTaskDefinition[]
+  progress    UserProgress[]
+}
+
+model DailyTaskDefinition {
+  id          String   @id @default(uuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  
+  dayIndex    Int      // Day 1, Day 2...
+  title       String   // "Leg Destruction"
+  type        String   // WORKOUT, MINDSET, NUTRITION
+  
+  // If it's a workout, link to blocks or logic
+  workoutBlockId String?
+}
+
+// --- USER JOURNEY (The Game) ---
+
+model UserProgress {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  
+  status      String   // LOCKED, IN_PROGRESS, COMPLETED
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  
+  currentDay  Int      @default(1)
+  
+  @@unique([userId, challengeId])
+}
+
+// The "Daily Generative Loop"
+model DailyUserTask {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  date        DateTime @default(now())
+  title       String
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  
+  // Verify logic
+  xpAwarded   Int      @default(0)
+}
+
+model WorkoutItem {
+  id             String   @id @default(uuid())
+  workoutBlockId String
+  workoutBlock   WorkoutBlock @relation(fields: [workoutBlockId], references: [id])
+  
+  exerciseId     String
+  exercise       Exercise @relation(fields: [exerciseId], references: [id])
+  
+  sets           Int
+  reps           String
+  restSec        Int
+  orderIndex     Int
+}
+
+// Link WorkoutItem back to WorkoutBlock (updating existing model)
+// Note: You need to update the WorkoutBlock model above to include `items WorkoutItem[]`

@@ -30,7 +30,11 @@ export default function LoginScreen() {
       
       const { accessToken } = response.data;
       if (accessToken) {
-        await SecureStore.setItemAsync('user_token', accessToken);
+        if (Platform.OS === 'web') {
+          localStorage.setItem('user_token', accessToken);
+        } else {
+          await SecureStore.setItemAsync('user_token', accessToken);
+        }
         router.replace('/(tabs)');
       }
     } catch (error: any) {

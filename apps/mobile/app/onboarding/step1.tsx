@@ -269,7 +269,8 @@ export default function OnboardingStep1() {
             {/* Moved Button Here (Inside standard flow) */}
             <TouchableOpacity 
                 onPress={handleNext}
-                style={styles.nextButtonInline}
+                disabled={!selectedTag && !mainQuest.trim()}
+                style={[styles.nextButtonInline, (!selectedTag && !mainQuest.trim()) && { opacity: 0.5 }]}
                 activeOpacity={0.9}
             >
                 <Text style={styles.nextButtonText}>
@@ -279,7 +280,7 @@ export default function OnboardingStep1() {
             </TouchableOpacity>
             
           </View>
-          <View style={{ height: 40 }} /> 
+          <View style={{ height: 40 }} />
         </ScrollView>
       </SafeAreaView>
     </View>

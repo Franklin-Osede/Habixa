@@ -16,15 +16,17 @@ lsof -ti:$WEB_PORT | xargs kill -9 2>/dev/null
 # Start Backend
 echo "🟢 Starting Backend..."
 cd apps/api
-npm run start:dev -- --port $API_PORT &
+# Use pnpm and env var for port
+PORT=$API_PORT pnpm run start:dev > ../../api.log 2>&1 &
 API_PID=$!
+echo $API_PID > ../../api.pid
 
-# Start Frontend (Expo Web)
+# Start Frontend (Mobile/Web) with watch mode so Fast Refresh works
 echo "🟢 Starting Frontend (Mobile/Web)..."
 cd ../mobile
-# Expo Web on specific port
-npx expo start --web --port $WEB_PORT &
+CI=false pnpm exec expo start --web --port $WEB_PORT > ../../mobile.log 2>&1 &
 FRONT_PID=$!
+echo $FRONT_PID > ../../mobile.pid
 
 # Handle shutdown
 cleanup() {
@@ -36,5 +38,6 @@ cleanup() {
 
 trap cleanup SIGINT
 
+echo "Services started! Logs: api.log, mobile.log"
 # Wait for processes
 wait $API_PID $FRONT_PID

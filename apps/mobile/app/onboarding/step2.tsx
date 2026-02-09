@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '../../constants/Colors';
 
 export default function OnboardingStep2() {
   const router = useRouter();
@@ -57,11 +57,6 @@ export default function OnboardingStep2() {
     { id: 'water', label: t('onboarding.habits.water') },
     { id: 'sleep', label: t('onboarding.habits.sleep') },
     { id: 'diet', label: t('onboarding.habits.diet') },
-    // New additions
-    { id: 'early_rise', label: 'Madrugar' },
-    { id: 'journaling', label: 'Journaling' },
-    { id: 'walking', label: 'Caminar' },
-    { id: 'no_sugar', label: 'Sin Azúcar' },
   ].sort((a, b) => b.label.length - a.label.length);
 
   const goalOptions = [
@@ -71,11 +66,6 @@ export default function OnboardingStep2() {
     { id: 'energy', label: t('onboarding.goals.energy') },
     { id: 'stress', label: t('onboarding.goals.stress') },
     { id: 'productivity', label: t('onboarding.goals.productivity') },
-    // New additions
-    { id: 'discipline', label: 'Disciplina' },
-    { id: 'endurance', label: 'Resistencia' },
-    { id: 'flexibility', label: 'Flexibilidad' },
-    { id: 'fasting', label: 'Ayuno' },
   ];
 
   const toggleHabit = (habitId: string) => {
@@ -214,24 +204,28 @@ export default function OnboardingStep2() {
             <View style={styles.sectionPadding}>
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>
-                  {t('onboarding.step2.experienceTitle') || 'Experience Level'}
+                  {t('onboarding.step2.experienceTitle')}
                 </Text>
                 <View style={styles.chipContainer}>
-                  {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+                  {[
+                    { id: 'beginner', label: t('onboarding.step2.experience.beginner') },
+                    { id: 'intermediate', label: t('onboarding.step2.experience.intermediate') },
+                    { id: 'advanced', label: t('onboarding.step2.experience.advanced') }
+                  ].map((level) => (
                     <TouchableOpacity 
-                      key={level}
-                      onPress={() => setExperienceLevel(level)}
+                      key={level.id}
+                      onPress={() => setExperienceLevel(level.id)}
                       style={[
                         styles.chip,
-                        experienceLevel === level ? styles.chipSelected : styles.chipUnselected
+                        experienceLevel === level.id ? styles.chipSelected : styles.chipUnselected
                       ]}
                       activeOpacity={0.8}
                     >
                       <Text style={[
                         styles.chipText,
-                        experienceLevel === level ? styles.chipTextSelected : styles.chipTextUnselected
+                        experienceLevel === level.id ? styles.chipTextSelected : styles.chipTextUnselected
                       ]}>
-                        {level}
+                        {level.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -243,24 +237,28 @@ export default function OnboardingStep2() {
             <View style={styles.sectionPadding}>
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>
-                  {t('onboarding.step2.equipmentTitle') || 'Access to Equipment'}
+                  {t('onboarding.step2.equipmentTitle')}
                 </Text>
                 <View style={styles.chipContainer}>
-                  {['Gym', 'Home Dumbbells', 'Bodyweight Only'].map((eq) => (
+                  {[
+                    { id: 'gym', label: t('onboarding.step2.equipment.gym') },
+                    { id: 'homeDumbbells', label: t('onboarding.step2.equipment.homeDumbbells') },
+                    { id: 'bodyweight', label: t('onboarding.step2.equipment.bodyweight') }
+                  ].map((eq) => (
                     <TouchableOpacity 
-                      key={eq}
-                      onPress={() => setEquipment(eq)}
+                      key={eq.id}
+                      onPress={() => setEquipment(eq.id)}
                       style={[
                         styles.chip,
-                        equipment === eq ? styles.chipSelected : styles.chipUnselected
+                        equipment === eq.id ? styles.chipSelected : styles.chipUnselected
                       ]}
                       activeOpacity={0.8}
                     >
                       <Text style={[
                         styles.chipText,
-                        equipment === eq ? styles.chipTextSelected : styles.chipTextUnselected
+                        equipment === eq.id ? styles.chipTextSelected : styles.chipTextUnselected
                       ]}>
-                        {eq}
+                        {eq.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -316,7 +314,8 @@ export default function OnboardingStep2() {
             <View style={styles.sectionPadding}>
                  <TouchableOpacity 
                     onPress={handleNext}
-                    style={styles.nextButton}
+                    disabled={selectedHabits.length === 0}
+                    style={[styles.nextButton, selectedHabits.length === 0 && { opacity: 0.5 }]}
                     activeOpacity={0.9}
                 >
                     <Text style={styles.nextButtonText}>

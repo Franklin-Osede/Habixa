@@ -28,10 +28,28 @@ export default function WelcomeScreen() {
   useEffect(() => {
     const loadSavedLanguage = async () => {
       try {
-        const savedLang = await SecureStore.getItemAsync('user_language');
+        let savedLang;
+        if (Platform.OS === 'web') {
+           savedLang = localStorage.getItem('user_language');
+        } else {
+           savedLang = await SecureStore.getItemAsync('user_language');
+        }
+        
         if (savedLang) {
           setSelectedLang(savedLang);
           await i18n.changeLanguage(savedLang);
+        }
+
+        // Check for token to auto-login
+        let token;
+        if (Platform.OS === 'web') {
+          token = localStorage.getItem('user_token');
+        } else {
+          token = await SecureStore.getItemAsync('user_token');
+        }
+
+        if (token) {
+           router.replace('/(tabs)');
         }
       } catch (error) {
         console.warn('Error loading saved language:', error);
@@ -46,7 +64,11 @@ export default function WelcomeScreen() {
     await i18n.changeLanguage(langId);
     setShowLanguageDropdown(false);
     try {
-      await SecureStore.setItemAsync('user_language', langId);
+      if (Platform.OS === 'web') {
+        localStorage.setItem('user_language', langId);
+      } else {
+        await SecureStore.setItemAsync('user_language', langId);
+      }
     } catch (error) {
       console.warn('Error saving language:', error);
     }
@@ -166,10 +188,10 @@ export default function WelcomeScreen() {
           <Text style={styles.buttonTextSecondary}>{t('welcome.haveAccount')}</Text>
         </TouchableOpacity>
         
-        <Text style={styles.legalText}>
-          {t('auth.agreeTerms')}
-        </Text>
+
       </View>
+
+
       </View>
     </SafeAreaView>
   );
@@ -398,4 +420,5 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: 8,
   },
+
 });

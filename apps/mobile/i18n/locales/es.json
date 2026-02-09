@@ -11,7 +11,11 @@
     "months": {
       "jan": "Ene", "feb": "Feb", "mar": "Mar", "apr": "Abr", "may": "May", "jun": "Jun",
       "jul": "Jul", "aug": "Ago", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dic"
-    }
+    },
+    "breakfast": "Desayuno",
+    "lunch": "Comida",
+    "dinner": "Cena",
+    "meal": "Comida"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -65,11 +69,23 @@
       "normal": "Saludable",
       "overweight": "Sobrepeso",
       "obese": "Obesidad",
-      "habitsTitle": "Selecciona tus hábitos",
+      "habitsTitle": "Selecciona los hábitos que quieres",
       "goalsTitle": "¿Cuáles son tus objetivos?",
       "info": "No te preocupes, siempre puedes ajustar estas preferencias más tarde en la configuración.",
       "bmiFormula": "IMC = Peso(kg) / Altura(m)²",
-      "next": "Siguiente: Nutrición"
+      "next": "Siguiente: Nutrición",
+      "experienceTitle": "Nivel de experiencia",
+      "equipmentTitle": "Acceso a equipamiento",
+      "experience": {
+        "beginner": "Principiante",
+        "intermediate": "Intermedio",
+        "advanced": "Avanzado"
+      },
+      "equipment": {
+        "gym": "Gimnasio",
+        "homeDumbbells": "Mancuernas en casa",
+        "bodyweight": "Solo peso corporal"
+      }
     },
     "step3": {
       "progress": "Paso 3 de 5",
@@ -105,7 +121,25 @@
         "saturday": "Sábado",
         "sunday": "Domingo"
       },
-      "next": "Siguiente: Visión Anual"
+      "tags": {
+        "breakfast": {
+            "protein": "Proteico",
+            "light": "Ligero",
+            "fruit": "Fruta"
+        },
+        "lunch": {
+            "healthy": "Saludable",
+            "carbs": "Carbohidratos",
+            "out": "Fuera"
+        },
+        "dinner": {
+            "salad": "Ensalada",
+            "soup": "Sopa",
+            "fastFood": "Fast Food"
+        }
+      },
+      "next": "Siguiente: Visión Anual",
+      "placeholder": "Describe tu comida..."
     },
     "diets": {
       "standard": "Estándar",
@@ -123,7 +157,7 @@
       "none": "Ninguna"
     },
     "step5": {
-      "progress": "Paso 5 de 5",
+      "progress": "Paso 5 de 6",
       "headlineStart": "Visión",
       "headlineAccent": "Anual",
       "subtitle": "Visualiza tu año. Cada punto te ayuda a seguir tu viaje.",
@@ -134,6 +168,58 @@
       "launchTitle": "Lanzamiento",
       "complete": "Completar Setup",
       "finalMsg": "Paso final para activar tu año"
+    },
+    "contract": {
+      "headline": "Resumen de tu plan",
+      "subline": "Enfocado en {{goal}}. Un día a la vez.",
+      "summaryTitle": "Lo que elegiste",
+      "planTypeTitle": "Tipo de plan",
+      "planTypeFlat": "Plan día a día",
+      "planType7": "Plan 7 días",
+      "planTypeGoals": "Según tus objetivos",
+      "yourPlanTitle": "Tu plan",
+      "yourPlanDesc": "Fase 1: Fundamentos — 7 días para sentar las bases.",
+      "cta": "Toca abajo para continuar y ver tu mapa.",
+      "startButton": "Ver mapa e empezar",
+      "defaultGoal": "tu objetivo",
+      "screenTitle": "Reporte de Estrategia",
+      "mainTitle": "Tu Estrategia \nestá Lista",
+      "subTitle": "Hemos diseñado un camino optimizado para tu perfil metabólico único.",
+      "bmiTitle": "Análisis IMC",
+      "bmiStatus": "Índice Saludable",
+      "ageTitle": "Edad Física",
+      "ageVs": "vs",
+      "ageEff": "Eficiencia por Edad",
+      "targetTitle": "Meta Objetivo",
+      "targetMode": "Modo Fuerza",
+      "focusTitle": "Enfoque Inicial",
+      "focusSubtitle": "Primeros 14 Días",
+      "projectionTitle": "PROYECCIÓN IA",
+      "projectionText": "Basado en tu <bold>Visión Anual</bold>, nuestro motor neuronal predice un aumento de masa magra de <highlight>4.2kg</highlight> en <bold>12 semanas</bold>.",
+      "projection": {
+        "muscle": "Basado en tu IMC actual de <highlight>{{bmi}}</highlight>, predecimos un aumento de masa magra de <highlight>~4-6kg</highlight> en <bold>12 semanas</bold>.",
+        "weight": "Optimizar tu metabolismo podría generar una reducción de <highlight>5-8kg</highlight> en los primeros <bold>90 días</bold>.",
+        "energy": "Enfocando patrones de sueño y nutrición para aumentar niveles de energía diaria un <highlight>40%</highlight>.",
+        "mindfulness": "Estableciendo una rutina diaria para reducir marcadores de estrés un <highlight>50%</highlight> en <bold>12 semanas</bold>.",
+        "default": "Nuestro motor neuronal predice resultados optimizados en <bold>12 semanas</bold> basado en tu perfil único."
+      },
+      "match": "Coincidencia",
+      "historical": "Análisis de datos históricos",
+      "continueBtn": "Continuar y elegir plan"
+    },
+    "step6": {
+      "progress": "Paso 6 de 6",
+      "headlineStart": "Conecta tu",
+      "headlineAccent": "Salud",
+      "description": "Habixa usa tus datos de salud para ofrecerte planes de entrenamiento y nutrición personalizados que se adaptan a las necesidades de tu cuerpo.",
+      "features": {
+        "steps": { "title": "Rastreo de Pasos", "sub": "Registra automáticamente tu movimiento diario." },
+        "sleep": { "title": "Análisis de Sueño", "sub": "Optimiza tu recuperación basada en el descanso." },
+        "calories": { "title": "Calorías Quemadas", "sub": "Ajusta tu nutrición dinámicamente." }
+      },
+      "syncButton": "Sincronizar Datos",
+      "syncing": "Sincronizando...",
+      "skip": "Saltar por ahora"
     },
     "tags": {
       "loseWeight": "Perder Peso",
@@ -157,5 +243,84 @@
       "stress": "Reducción de Estrés",
       "productivity": "Aumento de Productividad"
     }
+  },
+  "menu": {
+      "profile": {
+          "title": "Alex Habixa",
+          "subtitle": "Miembro Gold"
+      },
+      "primary": {
+          "community": "Comunidad",
+          "library": "Biblioteca Mental",
+          "leaderboards": "Clasificación"
+      },
+      "secondary": {
+          "settings": "Ajustes",
+          "support": "Soporte"
+      },
+      "premium": {
+          "title": "Habixa Premium",
+          "desc": "Desbloquea hábitos de alto rendimiento y contenido de coaching de élite.",
+          "cta": "Mejorar Ahora"
+      },
+      "signOut": "Cerrar Sesión",
+      "version": "Versión {{version}}"
+  },
+  "map": {
+    "phase": "Fase 1: Fundamentos",
+    "startSession": "INICIAR SESIÓN",
+    "notNow": "Ahora no",
+    "dayComplete": "¡Día {{day}} completado!",
+    "continue": "Continuar",
+    "newStreakRecord": "¡Nuevo récord!",
+    "dayStreak": "{{count}} días de racha"
+  },
+  "dashboard": {
+      "subtitle": "Guerrero Zen",
+      "level": "Nivel {{level}}",
+      "levelSubtitle": "Progreso",
+      "todaysPlan": "Plan de Hoy",
+      "dailyTips": "Consejo de IA",
+      "habitsTitle": "Tus Hábitos",
+      "schedule": {
+        "title": "Horario Diario",
+        "viewAll": "Ver todo",
+        "morningFlow": "Flujo Matutino",
+        "lunch": "Almuerzo Proteico",
+        "aiTag": "IA Recomendado",
+        "log": "LOG",
+        "empty": {
+          "title": "Activa tu Propósito",
+          "subtitle": "Elige tu nivel de compromiso para generar tu plan:"
+        }
+      },
+      "plans": {
+        "titles": {
+          "weight": "Quema Grasa",
+          "muscle": "Hipertrofia",
+          "stress": "Mente Zen",
+          "energy": "Energía Vital",
+          "generic": "Buenos Hábitos"
+        },
+        "daily": { "title": "⚡️ Calentamiento", "desc": "Plan de 1 día." },
+        "weekly": { "title": "🔥 Reto 7 Días", "desc": "Construye la disciplina.", "badge": "Recomendado" },
+        "monthly": { "title": "🏆 Espartano", "desc": "Transformación total." }
+      },
+      "ai": {
+        "welcome": "¡Bienvenido! Aún no tengo datos para analizar, pero puedo diseñar tu estrategia inicial. ¿Qué nivel de intensidad buscas hoy?",
+        "insight_placeholder": "Sigue así, estás construyendo el hábito.",
+        "quote": "La disciplina es el puente entre metas y logros."
+      },
+      "motivation": {
+          "title": "Dosis Diaria",
+          "quote": "\"No cuentes los días, haz que los días cuenten.\""
+      },
+      "health": {
+          "title": "Datos de Salud",
+          "hydration": "Hidratación",
+          "steps": "Pasos Hoy",
+          "sleep": "Sueño",
+          "calories": "Calorías"
+      }
   }
 }

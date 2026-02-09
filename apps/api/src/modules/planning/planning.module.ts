@@ -17,6 +17,6 @@ import { PrismaService } from '../../common/prisma.service';
       useClass: PrismaPlanRepository,
     },
   ],
-  exports: [PlanRepository],
+  exports: [PlanRepository, GenerateDailyPlanUseCase],
 })
 export class PlanningModule {}

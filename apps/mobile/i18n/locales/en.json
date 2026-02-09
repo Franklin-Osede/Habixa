@@ -11,7 +11,11 @@
     "months": {
       "jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun",
       "jul": "Jul", "aug": "Aug", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dec"
-    }
+    },
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner",
+    "meal": "Meal"
   },
   "auth": {
     "login": "Login",
@@ -69,7 +73,19 @@
       "goalsTitle": "What are your goals?",
       "info": "Don't worry, you can always adjust these preferences later in settings.",
       "bmiFormula": "BMI = Weight(kg) / Height(m)²",
-      "next": "Next: Nutrition"
+      "next": "Next: Nutrition",
+      "experienceTitle": "Experience Level",
+      "equipmentTitle": "Access to Equipment",
+      "experience": {
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "equipment": {
+        "gym": "Gym",
+        "homeDumbbells": "Home Dumbbells",
+        "bodyweight": "Bodyweight Only"
+      }
     },
     "step3": {
       "progress": "Step 3 of 5",
@@ -105,7 +121,25 @@
         "saturday": "Saturday",
         "sunday": "Sunday"
       },
-      "next": "Next: Yearly Vision"
+      "tags": {
+        "breakfast": {
+            "protein": "Protein",
+            "light": "Light",
+            "fruit": "Fruit"
+        },
+        "lunch": {
+            "healthy": "Healthy",
+            "carbs": "Carbs",
+            "out": "Eating Out"
+        },
+        "dinner": {
+            "salad": "Salad",
+            "soup": "Soup",
+            "fastFood": "Fast Food"
+        }
+      },
+      "next": "Next: Yearly Vision",
+      "placeholder": "Describe your meal..."
     },
     "diets": {
       "standard": "Standard",
@@ -123,7 +157,7 @@
       "none": "None"
     },
     "step5": {
-      "progress": "Step 5 of 5",
+      "progress": "Step 5 of 6",
       "headlineStart": "Yearly",
       "headlineAccent": "Vision",
       "subtitle": "Visualize your year. Every dot helps you track your journey.",
@@ -134,6 +168,58 @@
       "launchTitle": "Selected Launch",
       "complete": "Complete Setup",
       "finalMsg": "Final step to activate your year"
+    },
+    "contract": {
+      "headline": "Your plan summary",
+      "subline": "Focused on {{goal}}. One day at a time.",
+      "summaryTitle": "What you chose",
+      "planTypeTitle": "Plan type",
+      "planTypeFlat": "Day-by-day plan",
+      "planType7": "7-day plan",
+      "planTypeGoals": "According to your goals",
+      "yourPlanTitle": "Your plan",
+      "yourPlanDesc": "Phase 1: Foundation — 7 days to build the basics.",
+      "cta": "Tap below to continue and see your map.",
+      "startButton": "View map & start",
+      "defaultGoal": "your goal",
+      "screenTitle": "Strategy Report",
+      "mainTitle": "Your Strategy \nis Ready",
+      "subTitle": "We've engineered a path optimized for your unique metabolic profile.",
+      "bmiTitle": "BMI Analysis",
+      "bmiStatus": "Healthy Index",
+      "ageTitle": "Physical Age",
+      "ageVs": "vs",
+      "ageEff": "Age Efficiency",
+      "targetTitle": "Target Goal",
+      "targetMode": "Strength Mode",
+      "focusTitle": "Initial Focus",
+      "focusSubtitle": "First 14 Days",
+      "projectionTitle": "AI PROJECTION",
+      "projectionText": "Leveraging your <bold>Yearly Vision</bold>, our neural engine predicts a <highlight>4.2kg</highlight> lean mass increase in <bold>12 weeks</bold>.",
+      "projection": {
+        "muscle": "Based on your current BMI of <highlight>{{bmi}}</highlight>, we predict a lean mass increase of <highlight>~4-6kg</highlight> in <bold>12 weeks</bold>.",
+        "weight": "Optimizing your metabolism could yield a <highlight>5-8kg</highlight> reduction in the first <bold>90 days</bold>.",
+        "energy": "Targeting sleep and nutrition patterns to increase daily energy levels by <highlight>40%</highlight>.",
+        "mindfulness": "Establishing a daily routine to reduce stress markers by <highlight>50%</highlight> in <bold>12 weeks</bold>.",
+        "default": "Our neural engine predicts optimized results in <bold>12 weeks</bold> based on your unique profile."
+      },
+      "match": "Match",
+      "historical": "Historical data analysis",
+      "continueBtn": "Continue to choose your plan"
+    },
+    "step6": {
+      "progress": "Step 6 of 6",
+      "headlineStart": "Connect to",
+      "headlineAccent": "Health",
+      "description": "Habixa uses your health data to provide personalized workout and nutrition plans that adapt to your body's needs.",
+      "features": {
+        "steps": { "title": "Track Steps", "sub": "Auto-log your daily movement." },
+        "sleep": { "title": "Sleep Analysis", "sub": "Optimize recovery based on rest." },
+        "calories": { "title": "Burned Calories", "sub": "Adjust nutrition dynamically." }
+      },
+      "syncButton": "Sync Health Data",
+      "syncing": "Syncing...",
+      "skip": "Skip for now"
     },
     "tags": {
       "loseWeight": "Lose Weight",
@@ -157,5 +243,83 @@
       "stress": "Stress Reduction",
       "productivity": "Productivity"
     }
+  },
+  "menu": {
+      "profile": {
+          "title": "Alex Habixa",
+          "subtitle": "Gold Member"
+      },
+      "primary": {
+          "community": "Community",
+          "library": "Mindset Library",
+          "leaderboards": "Leaderboards"
+      },
+      "secondary": {
+          "settings": "Settings",
+          "support": "Support"
+      },
+      "premium": {
+          "title": "Habixa Premium",
+          "desc": "Unlock all high-performance habits and elite coaching content.",
+          "cta": "Upgrade Now"
+      },
+      "signOut": "Sign Out",
+      "version": "Version {{version}}"
+  },
+  "map": {
+    "phase": "Phase 1: Foundation",
+    "startSession": "START SESSION",
+    "notNow": "Not now",
+    "dayComplete": "Day {{day}} Complete!",
+    "continue": "Continue",
+    "newStreakRecord": "New record!",
+    "dayStreak": "{{count}} day streak"
+  },
+  "dashboard": {
+      "subtitle": "Zen Warrior",
+      "level": "Level {{level}}",
+      "levelSubtitle": "Progress",
+      "todaysPlan": "Today's Plan",
+      "dailyTips": "AI Coach Tip",
+      "habitsTitle": "Your Habits",
+      "schedule": {
+        "title": "Daily Schedule",
+        "viewAll": "View all",
+        "morningFlow": "Morning Flow",
+        "lunch": "High Protein Lunch",
+        "aiTag": "AI Recommended",
+        "log": "LOG",
+        "empty": {
+          "title": "Activate Your Purpose",
+          "subtitle": "Choose your commitment level to generate your plan:"
+        }
+      },
+      "plans": {
+        "titles": {
+          "weight": "Fat Burn",
+          "muscle": "Hypertrophy",
+          "stress": "Zen Mind",
+          "energy": "Vital Energy",
+          "generic": "Good Habits"
+        },
+        "daily": { "title": "⚡️ Warm Up", "desc": "1 Day Plan." },
+        "weekly": { "title": "🔥 7 Day Challenge", "desc": "Build discipline.", "badge": "Recommended" },
+        "monthly": { "title": "🏆 Spartan", "desc": "Total transformation." }
+      },
+      "ai": {
+        "welcome": "Welcome! I don't have enough data yet, but I can design your initial strategy. What intensity level are you looking for today?",
+        "insight_placeholder": "Keep it up, you are building the habit."
+      },
+      "motivation": {
+          "title": "Daily Dose",
+          "quote": "\"Don't count the days, make the days count.\""
+      },
+      "health": {
+          "title": "Health Insights",
+          "hydration": "Hydration",
+          "steps": "Steps Today",
+          "sleep": "Sleep",
+          "calories": "Calories"
+      }
   }
 }

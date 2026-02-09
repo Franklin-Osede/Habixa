@@ -66,13 +66,12 @@ export default function RootLayout() {
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="onboarding/step-contract" options={{ headerShown: false, contentStyle: { backgroundColor: '#102216' } }} />
         <Stack.Screen 
-          name="onboarding/language" 
+          name="admin/index" 
           options={{ 
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: '#102216',
-            },
+            presentation: 'modal', 
+            headerShown: false 
           }} 
         />
       </Stack>
