@@ -12,15 +12,20 @@ export class GetUserProfileUseCase implements UseCase<
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(userId: string): Promise<Result<UserDto>> {
-    const user = await this.userRepository.findById(userId);
+    const profile = await this.userRepository.findProfileForMe(userId);
 
-    if (!user) {
+    if (!profile) {
       return Result.fail('User not found');
     }
 
     const dto = new UserDto();
-    dto.id = user.id.toString();
-    dto.email = user.email;
+    dto.id = profile.id;
+    dto.email = profile.email;
+    dto.level = profile.level;
+    dto.xp = profile.xp;
+    dto.currentStreak = profile.currentStreak;
+    dto.currentDayIndex = profile.currentDayIndex;
+    dto.gems = profile.gems;
 
     return Result.ok(dto);
   }

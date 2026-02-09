@@ -1,27 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity,  StyleSheet, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/Colors';
+import apiClient from '../../src/services/api.client';
+
+/** Build profile payload from onboarding params for PUT /identity/profile */
+function buildProfilePayload(params: Record<string, string | undefined>) {
+  const age = params.age ? Number(params.age) : undefined;
+  const weight = params.weight ? Number(params.weight) : undefined;
+  const height = params.height ? Number(params.height) : undefined;
+  const goals = params.selectedTag ? [params.selectedTag] : [];
+  return {
+    age,
+    weight,
+    height,
+    goals,
+    measurementSystem: (params.unitSystem as 'metric' | 'imperial') || 'metric',
+    dietaryPreference: params.dietType,
+  };
+}
 
 export default function OnboardingStep6() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { t } = useTranslation();
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Mock function to simulate health permission request
+  // Flujo: step5 -> step6 (aquí) -> step-contract (resumen) -> mapa. Sin redirect.
+
+  const finishOnboarding = useCallback(async () => {
+    const payload = buildProfilePayload(params as unknown as Record<string, string | undefined>);
+    try {
+      await apiClient.put('/identity/profile', payload);
+    } catch {
+      // Ignore errors for now
+    }
+    router.replace({
+      pathname: '/onboarding/step-contract',
+      params: { ...params }
+    });
+  }, [params, router]);
+
   const handleSync = () => {
     setIsSyncing(true);
-    // In a real app, this would be: await HealthKit.requestPermissions(...)
+    // Simular petición de salud; luego guardar perfil y salir
     setTimeout(() => {
       setIsSyncing(false);
-      router.replace('/(tabs)');
+      finishOnboarding();
     }, 1500);
   };
 
   const handleSkip = () => {
-    router.replace('/(tabs)');
+    finishOnboarding();
   };
 
   const FeatureRow = ({ icon, label, sub }: { icon: string, label: string, sub: string }) => (
@@ -39,8 +73,24 @@ export default function OnboardingStep6() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         
+        {/* TopAppBar */}
+        <View style={styles.topBar}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <MaterialIcons name="arrow-back-ios" size={20} color="#fff" />
+            </TouchableOpacity>
+            
+            <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>{t('onboarding.step6.progress')}</Text>
+                <View style={styles.progressBarBg}>
+                    <View style={styles.progressBarFill} />
+                </View>
+            </View>
+
+            <View style={styles.spacer} />
+        </View>
+
         <View style={styles.content}>
             <View style={styles.iconContainer}>
                 <Ionicons name="heart-circle" size={120} color={Colors.primary} />
@@ -50,28 +100,28 @@ export default function OnboardingStep6() {
             </View>
 
             <Text style={styles.headline}>
-                Connect to <Text style={styles.headlineAccent}>Health</Text>
+                {t('onboarding.step6.headlineStart')} <Text style={styles.headlineAccent}>{t('onboarding.step6.headlineAccent')}</Text>
             </Text>
             
             <Text style={styles.description}>
-                Habixa uses your health data to provide personalized workout and nutrition plans that adapt to your body's needs.
+                {t('onboarding.step6.description')}
             </Text>
 
             <View style={styles.features}>
                 <FeatureRow 
                     icon="directions-walk" 
-                    label="Track Steps" 
-                    sub="Auto-log your daily movement."
+                    label={t('onboarding.step6.features.steps.title')} 
+                    sub={t('onboarding.step6.features.steps.sub')}
                 />
                 <FeatureRow 
                     icon="nights-stay" 
-                    label="Sleep Analysis" 
-                    sub="Optimize recovery based on rest."
+                    label={t('onboarding.step6.features.sleep.title')} 
+                    sub={t('onboarding.step6.features.sleep.sub')}
                 />
                  <FeatureRow 
                     icon="local-fire-department" 
-                    label="Burned Calories" 
-                    sub="Adjust nutrition dynamically."
+                    label={t('onboarding.step6.features.calories.title')} 
+                    sub={t('onboarding.step6.features.calories.sub')}
                 />
             </View>
 
@@ -85,17 +135,20 @@ export default function OnboardingStep6() {
                 disabled={isSyncing}
             >
                 {isSyncing ? (
-                    <Text style={styles.syncButtonText}>Syncing...</Text>
+                    <>
+                        <ActivityIndicator color={Colors.backgroundDark} />
+                        <Text style={styles.syncButtonText}>{t('onboarding.step6.syncing')}</Text>
+                    </>
                 ) : (
                     <>
-                        <Text style={styles.syncButtonText}>Sync Health Data</Text>
+                        <Text style={styles.syncButtonText}>{t('onboarding.step6.syncButton')}</Text>
                         <MaterialIcons name="check-circle" size={24} color={Colors.backgroundDark} />
                     </>
                 )}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-                <Text style={styles.skipText}>Skip for now</Text>
+                <Text style={styles.skipText}>{t('onboarding.step6.skip')}</Text>
             </TouchableOpacity>
         </View>
 
@@ -111,8 +164,52 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    justifyContent: 'space-between',
   },
+  // TopBar
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  spacer: {
+    width: 40,
+    height: 40,
+  },
+  progressContainer: {
+    alignItems: 'center',
+  },
+  progressText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  progressBarBg: {
+    height: 4,
+    width: 80,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    width: '100%', // 6/6
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+  },
+  backButton: {
+      height: 40,
+      width: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  // Content
   content: {
     flex: 1,
     paddingHorizontal: 32,
@@ -146,12 +243,12 @@ const styles = StyleSheet.create({
       color: 'rgba(255,255,255,0.6)',
       fontSize: 16,
       textAlign: 'center',
-      marginBottom: 48,
+      marginBottom: 32,
       lineHeight: 24,
   },
   features: {
       width: '100%',
-      gap: 24,
+      gap: 16,
   },
   featureRow: {
       flexDirection: 'row',
@@ -184,6 +281,7 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     padding: 32,
+    paddingBottom: 16,
     width: '100%',
   },
   syncButton: {

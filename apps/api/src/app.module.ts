@@ -12,10 +12,14 @@ import { McpModule } from './modules/mcp/mcp.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { WorkoutsModule } from './modules/workouts/workouts.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { SagaModule } from './modules/saga/saga.module';
+import { ChallengesModule } from './modules/challenges/challenges.module';
 
 @Module({
   imports: [
     CommonModule,
+    ChallengesModule,
     IdentityModule,
     AuthModule,
     ProfileModule,
@@ -25,7 +29,9 @@ import { WorkoutsModule } from './modules/workouts/workouts.module';
     WorkoutsModule,
     McpModule,
     GamificationModule,
+    SagaModule,
     EventEmitterModule.forRoot(),
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

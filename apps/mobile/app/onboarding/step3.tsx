@@ -32,31 +32,43 @@ const DualRangeSlider = ({
   const startMin = useMemo(() => timeToMinutes(startTime), [startTime]);
   const endMin = useMemo(() => timeToMinutes(endTime), [endTime]);
 
+  // Use refs to track latest values for PanResponder to access avoiding stale closures
+  const widthRef = useRef(0);
+  const startMinRef = useRef(startMin);
+  const endMinRef = useRef(endMin);
+  const onChangeRef = useRef(onChange);
+
+  // Update refs on render
+  widthRef.current = width;
+  startMinRef.current = startMin;
+  endMinRef.current = endMin;
+  onChangeRef.current = onChange;
+
   const handleStartDrag = (dx: number, initialStart: number) => {
-    if (width === 0) return;
-    const minutesPerPixel = 1440 / width;
+    if (widthRef.current === 0) return;
+    const minutesPerPixel = 1440 / widthRef.current;
     const deltaMinutes = dx * minutesPerPixel;
     let newStart = Math.round((initialStart + deltaMinutes) / 15) * 15; // Snap to 15m
     
     // Constraints: 0 <= newStart <= endMin
-    newStart = Math.max(0, Math.min(newStart, endMin - 15)); // Keep at least 15m gap
+    newStart = Math.max(0, Math.min(newStart, endMinRef.current - 15)); // Keep at least 15m gap
     
-    if (newStart !== startMin) {
-      onChange(minutesToTime(newStart), endTime);
+    if (newStart !== startMinRef.current) {
+      onChangeRef.current(minutesToTime(newStart), endTime); // Use prop endTime, but effectively it's the same
     }
   };
 
   const handleEndDrag = (dx: number, initialEnd: number) => {
-    if (width === 0) return;
-    const minutesPerPixel = 1440 / width;
+    if (widthRef.current === 0) return;
+    const minutesPerPixel = 1440 / widthRef.current;
     const deltaMinutes = dx * minutesPerPixel;
     let newEnd = Math.round((initialEnd + deltaMinutes) / 15) * 15; // Snap to 15m
     
     // Constraints: startMin <= newEnd <= 1440
-    newEnd = Math.max(startMin + 15, Math.min(newEnd, 1440)); // Keep at least 15m gap
+    newEnd = Math.max(startMinRef.current + 15, Math.min(newEnd, 1440)); // Keep at least 15m gap
     
-    if (newEnd !== endMin) {
-      onChange(startTime, minutesToTime(newEnd));
+    if (newEnd !== endMinRef.current) {
+      onChangeRef.current(startTime, minutesToTime(newEnd));
     }
   };
 
@@ -66,7 +78,7 @@ const DualRangeSlider = ({
   const leftResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => { gestureState.current.start = startMin; },
+      onPanResponderGrant: () => { gestureState.current.start = startMinRef.current; },
       onPanResponderMove: (evt: any, gs: any) => handleStartDrag(gs.dx, gestureState.current.start),
     })
   ).current;
@@ -74,7 +86,7 @@ const DualRangeSlider = ({
   const rightResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => { gestureState.current.end = endMin; },
+      onPanResponderGrant: () => { gestureState.current.end = endMinRef.current; },
       onPanResponderMove: (evt: any, gs: any) => handleEndDrag(gs.dx, gestureState.current.end),
     })
   ).current;
@@ -186,7 +198,7 @@ export default function OnboardingStep3() {
   const [wakeTime, setWakeTime] = useState('07:00');
   const [bedTime, setBedTime] = useState('23:00');
   const [activeSleepCard, setActiveSleepCard] = useState<'wake' | 'bed'>('wake'); // Track active focus
-  const [workStart, setWorkStart] = useState('04:00');
+  const [workStart, setWorkStart] = useState('09:00');
   const [workEnd, setWorkEnd] = useState('17:00');
   const [freeBlocks, setFreeBlocks] = useState<string[]>([]);
 
@@ -619,11 +631,13 @@ const styles = StyleSheet.create({
   },
   blockChip: {
       flexDirection: 'row',
-      height: 56,
+      height: 48, // Reduced height
       alignItems: 'center',
-      paddingHorizontal: 24,
-      borderRadius: 28,
+      paddingHorizontal: 16, // Reduced padding
+      borderRadius: 24,
       borderWidth: 1,
+      flexGrow: 1, // Allow growing to fill space but sharing row
+      justifyContent: 'center',
   },
   chipSelected: {
       backgroundColor: Colors.primary,

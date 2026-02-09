@@ -214,6 +214,55 @@ async function main() {
     ],
   });
 
+  // --- 6b. SAGA PATH (Phase 1 default challenge) ---
+  let phase1 = await prisma.challenge.findFirst({
+    where: { title: 'Phase 1: Foundation' },
+  });
+  if (!phase1) {
+    phase1 = await prisma.challenge.create({
+      data: {
+        title: 'Phase 1: Foundation',
+        description: 'First 7 days to build the habit.',
+        durationDays: 7,
+        rewardPoints: 250,
+      },
+    });
+    const sagaTasks = [
+      { dayIndex: 1, title: 'Assessment Workout', type: 'WORKOUT' },
+      { dayIndex: 2, title: 'Upper Body Basics', type: 'WORKOUT' },
+      { dayIndex: 3, title: 'Lower Body Basics', type: 'WORKOUT' },
+      { dayIndex: 4, title: 'Active Recovery', type: 'WORKOUT' },
+      { dayIndex: 5, title: 'Full Body Push', type: 'WORKOUT' },
+      { dayIndex: 6, title: 'Core & Stability', type: 'WORKOUT' },
+      { dayIndex: 7, title: 'Week 1 Boss', type: 'WORKOUT' },
+    ];
+    for (const t of sagaTasks) {
+      await prisma.dailyTaskDefinition.create({
+        data: {
+          challengeId: phase1.id,
+          dayIndex: t.dayIndex,
+          title: t.title,
+          type: t.type,
+        },
+      });
+    }
+  }
+
+  // --- 7. USERS (Admin) ---
+  const adminPassword = 'hashed_password_placeholder'; // In prod use bcrypt
+  await prisma.user.upsert({
+    where: { email: 'admin@habixa.com' },
+    update: { role: 'ADMIN' },
+    create: {
+      email: 'admin@habixa.com',
+      name: 'The Game Master',
+      password: adminPassword,
+      role: 'ADMIN',
+      level: 99,
+      xp: 999999,
+    },
+  });
+
   console.log('✅ Seeding Complete!');
 }
 

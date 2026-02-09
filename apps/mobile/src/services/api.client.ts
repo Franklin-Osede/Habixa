@@ -21,7 +21,15 @@ const apiClient = axios.create({
 // Interceptor to inject token
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await SecureStore.getItemAsync('user_token');
+    let token: string | null = null;
+    
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') {
+        token = localStorage.getItem('user_token');
+      }
+    } else {
+      token = await SecureStore.getItemAsync('user_token');
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -38,7 +46,13 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Logic to logout user or refresh token could go here
+    if (Platform.OS === 'web') {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('user_token');
+      }
+    } else {
       await SecureStore.deleteItemAsync('user_token');
+    }
     }
     return Promise.reject(error);
   },

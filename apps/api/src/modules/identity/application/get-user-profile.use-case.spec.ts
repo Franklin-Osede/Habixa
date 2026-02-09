@@ -1,7 +1,5 @@
 import { GetUserProfileUseCase } from './get-user-profile.use-case';
 import { UserRepository } from '../domain/repositories/user.repository';
-import { User } from '../domain/user.entity';
-import { UniqueEntityID } from '../../../shared/domain/unique-entity-id';
 
 describe('GetUserProfileUseCase', () => {
   let useCase: GetUserProfileUseCase;
@@ -10,36 +8,43 @@ describe('GetUserProfileUseCase', () => {
   beforeEach(() => {
     mockUserRepository = {
       findById: jest.fn(),
+      findProfileForMe: jest.fn(),
       findByEmail: jest.fn(),
       save: jest.fn(),
+      saveProfile: jest.fn(),
     } as unknown as jest.Mocked<UserRepository>;
 
     useCase = new GetUserProfileUseCase(mockUserRepository);
   });
 
   it('should return user profile if found', async () => {
-    const userId = new UniqueEntityID();
-    const user = User.create(
-      {
-        email: 'test@example.com',
-        password: 'hashedPassword',
-      },
-      userId,
-    ).getValue();
+    const profile = {
+      id: 'user-1',
+      email: 'test@example.com',
+      level: 2,
+      xp: 150,
+      currentStreak: 3,
+      currentDayIndex: 4,
+      gems: 25,
+    };
+    mockUserRepository.findProfileForMe.mockResolvedValue(profile);
 
-    mockUserRepository.findById.mockResolvedValue(user);
-
-    const result = await useCase.execute(userId.toString());
+    const result = await useCase.execute('user-1');
 
     expect(result.isSuccess).toBe(true);
     const dto = result.getValue();
-    expect(dto.id).toBe(userId.toString());
-    expect(dto.email).toBe(user.email);
-    expect(mockUserRepository.findById).toHaveBeenCalledWith(userId.toString());
+    expect(dto.id).toBe('user-1');
+    expect(dto.email).toBe('test@example.com');
+    expect(dto.level).toBe(2);
+    expect(dto.xp).toBe(150);
+    expect(dto.currentStreak).toBe(3);
+    expect(dto.currentDayIndex).toBe(4);
+    expect(dto.gems).toBe(25);
+    expect(mockUserRepository.findProfileForMe).toHaveBeenCalledWith('user-1');
   });
 
   it('should return error if user not found', async () => {
-    mockUserRepository.findById.mockResolvedValue(null);
+    mockUserRepository.findProfileForMe.mockResolvedValue(null);
 
     const result = await useCase.execute('non-existent-id');
 

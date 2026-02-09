@@ -7,6 +7,7 @@ import { PlanRepository } from '../domain/repositories/plan.repository';
 
 export class GenerateDailyPlanDto {
   userId!: string;
+  date?: Date; // Optional: Defaults to today if not provided
 }
 
 @Injectable()
@@ -17,9 +18,9 @@ export class GenerateDailyPlanUseCase implements UseCase<
   constructor(private readonly planRepository: PlanRepository) {}
 
   async execute(request: GenerateDailyPlanDto): Promise<Result<DailyPlan>> {
-    const date = new Date();
+    const date = request.date || new Date();
 
-    // 1. Check if plan already exists for today (Idempotency)
+    // 1. Check if plan already exists for this date (Idempotency)
     const existingPlan = await this.planRepository.findByUserIdAndDate(
       request.userId,
       date,

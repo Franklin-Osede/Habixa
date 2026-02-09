@@ -1,109 +1,185 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, TextInput, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Modal } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '../../constants/Colors';
 
-const { width } = Dimensions.get('window');
+// const { width } = Dimensions.get('window');
 
-// Helper to get day of year, etc.
-const getDayOfYear = (date: Date) => {
-  const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date.getTime() - start.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  return Math.floor(diff / oneDay);
+// Helper to get days in month
+const getDaysInMonth = (month: number, year: number) => {
+  return new Date(year, month + 1, 0).getDate();
+};
+
+// Helper to get first day of month (0 = Sunday, 1 = Monday, etc.)
+const getFirstDayOfMonth = (month: number, year: number) => {
+  return new Date(year, month, 1).getDay();
 };
 
 export default function OnboardingStep5() {
   const router = useRouter();
+  const params = useLocalSearchParams<Record<string, string | undefined>>();
   const { t } = useTranslation();
   
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const currentYear = today.getFullYear();
+  
+  // Calendar State
+  // We want to show months from current month to Dec 2026 (or just current year end)
+  const monthsList = useMemo(() => {
+      const list = [];
+      const startMonth = today.getMonth();
+      for (let i = startMonth; i < 12; i++) {
+          list.push(new Date(currentYear, i, 1));
+      }
+      return list;
+  }, [currentYear, today]);
+
+  // Horizontal Month Selection State
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0); // Index in monthsList
+
+  // Range Selection State
+  const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   
   // Goals State
   const [goals, setGoals] = useState<{ id: string; text: string; start: Date; end: Date }[]>([]);
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [tempGoalText, setTempGoalText] = useState('');
-  
-  // Drag Selection State
-  const [selectionStart, setSelectionStart] = useState<number | null>(null);
-  const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
-  const months = useMemo(() => [
-    t('common.months.jan') || 'Ene', t('common.months.feb') || 'Feb', 
-    t('common.months.mar') || 'Mar', t('common.months.apr') || 'Abr', 
-    t('common.months.may') || 'May', t('common.months.jun') || 'Jun', 
-    t('common.months.jul') || 'Jul', t('common.months.aug') || 'Ago', 
-    t('common.months.sep') || 'Sep', t('common.months.oct') || 'Oct', 
-    t('common.months.nov') || 'Nov', t('common.months.dec') || 'Dic'
-  ], [t]);
-
-  const handleMonthPress = (index: number) => {
-    // Current month or future only
-    const currentMonth = today.getMonth();
-    // Allow past selection if needed? User said "calendar real". Let's restrict to current year forward.
-    if (index < currentMonth) return;
-
-    if (selectionStart === null || (selectionStart !== null && selectionEnd !== null)) {
-      setSelectionStart(index);
-      setSelectionEnd(null);
-    } else {
-      if (index < selectionStart) {
-        setSelectionStart(index);
-        setSelectionEnd(selectionStart);
-      } else {
-        setSelectionEnd(index);
-      }
-      setTimeout(() => setIsAddingGoal(true), 150);
-    }
+  const handleDatePress = (date: Date) => {
+      // Logic for range selection
+      setRange((prev: { start: Date | null; end: Date | null }) => {
+          if (!prev.start || (prev.start && prev.end)) {
+              // Start new selection
+              return { start: date, end: null };
+          } else {
+              // Complete selection or restart if earlier
+              if (date < prev.start) {
+                  return { start: date, end: null };
+              } else {
+                  // Valid range
+                   // Open modal after a short delay to let visual update
+                  setTimeout(() => setIsAddingGoal(true), 100);
+                  return { ...prev, end: date };
+              }
+          }
+      });
   };
 
-  const addGoal = () => {
-    if (tempGoalText.trim() && selectionStart !== null) {
-        const end = selectionEnd !== null ? selectionEnd : selectionStart;
+  const addGoal = (text: string = tempGoalText) => {
+    if (text.trim() && range.start) {
         setGoals([...goals, {
             id: Date.now().toString(),
-            text: tempGoalText,
-            start: new Date(currentYear, selectionStart, 1),
-            end: new Date(currentYear, end + 1, 0)
+            text: text,
+            start: range.start,
+            end: range.end || range.start // Fallback to single day if end is null
         }]);
         setTempGoalText('');
-        setSelectionStart(null);
-        setSelectionEnd(null);
         setIsAddingGoal(false);
+        setRange({ start: null, end: null });
     }
   };
 
   const handleFinish = () => {
-    router.push('/onboarding/step6');
+    // Flujo: step5 -> step6 (sincronizar) -> step-contract (resumen) -> mapa
+    const entries = Object.entries(params).filter(
+      (entry): entry is [string, string] =>
+        entry[1] != null && typeof entry[1] === 'string'
+    );
+    const query = new URLSearchParams(entries).toString();
+    const path = query ? `/onboarding/step6?${query}` : '/onboarding/step6';
+    router.replace(path as import('expo-router').Href);
   };
+
+  // Helper check for styling days
+  const getDayStyle = (date: Date) => {
+      const time = date.getTime();
+      const start = range.start?.getTime();
+      const end = range.end?.getTime();
+      
+      const isSelected = time === start || time === end;
+      const inRange = start && end && time > start && time < end;
+      const isToday = date.toDateString() === today.toDateString();
+      const hasGoal = goals.some((g: { start: Date; end: Date }) => time >= g.start.getTime() && time <= g.end.getTime());
+
+      return { isSelected, inRange, isToday, hasGoal };
+  };
+
+  const renderMonthGrid = (date: Date) => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const daysInMonth = getDaysInMonth(month, year);
+      const firstDay = getFirstDayOfMonth(month, year);
+      const startOffset = (firstDay === 0 ? 6 : firstDay - 1); // Mon layout
+
+      const days = [];
+      for (let i = 0; i < startOffset; i++) {
+          days.push(<View key={`empty-${month}-${i}`} style={styles.dayCellEmpty} />);
+      }
+
+      for (let i = 1; i <= daysInMonth; i++) {
+          const d = new Date(year, month, i);
+          const { isSelected, inRange, isToday, hasGoal } = getDayStyle(d);
+          
+          days.push(
+              <TouchableOpacity 
+                  key={`day-${month}-${i}`} 
+                  style={[
+                      styles.dayCell, 
+                      !!isToday && styles.dayCellToday,
+                      !!inRange && styles.dayCellInRange,
+                      !!isSelected && styles.dayCellSelected,
+                      !!(hasGoal && !inRange && !isSelected) && styles.dayCellHasGoal
+                  ]}
+                  onPress={() => handleDatePress(d)}
+                  activeOpacity={0.7}
+              >
+                  <Text style={[
+                      styles.dayText, 
+                      !!isToday && styles.dayTextToday,
+                      !!(isSelected || inRange) && styles.dayTextSelected
+                  ]}>{i}</Text>
+                   {/* Optional Marker dots */}
+                   {hasGoal && !isSelected && !inRange && <View style={styles.goalDot} />}
+              </TouchableOpacity>
+          );
+      }
+      return days;
+  };
+
+  const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+  const exampleGoals = [
+      "💪 Ganar masa muscular",
+      "🚶‍♂️ Andar 1 hora diaria",
+      "🥗 Comer comida real",
+      "🏃‍♂️ Correr 5km semanales",
+      "📚 Leer 20 págs al día",
+      "💧 Beber 2L de agua diarios"
+  ];
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         
-        {/* Header - Fixed Step 6 Logic */}
-        <View style={styles.headerContainer}>
+        {/* TopAppBar */}
+        <View style={styles.topBar}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <MaterialIcons name="arrow-back-ios" size={20} color="#fff" />
             </TouchableOpacity>
             
-            <View style={{alignItems: 'center'}}>
-                <Text style={styles.headerTitle}>
-                    {t('onboarding.step5.headlineStart')}
-                </Text> 
-                 <Text style={[styles.headerTitle, {fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4}]}>
-                    {t('onboarding.step5.step')} 5/6
-                </Text>
+            <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>PASO 5 DE 6</Text>
+                <View style={styles.progressBarBg}>
+                    <View style={styles.progressBarFill} />
+                </View>
             </View>
 
-            <View style={{ width: 40 }} /> 
+            <View style={styles.spacer} />
         </View>
 
         <ScrollView 
@@ -111,112 +187,160 @@ export default function OnboardingStep5() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-            {/* Calendar Grid */}
-            <View style={styles.timelineSection}>
-                <Text style={styles.sectionTitle}>
-                    {currentYear} - {t('onboarding.step5.subtitle')}
-                </Text>
-                
-                <View style={styles.monthsGrid}>
-                    {months.map((m, index) => {
-                         const currentMonth = today.getMonth();
-                         const isPast = index < currentMonth;
-                         const isCurrent = index === currentMonth;
-                         
-                         // Selection Logic
-                         const isSelected = (selectionStart !== null && index === selectionStart) || 
-                                           (selectionEnd !== null && index === selectionEnd) ||
-                                           (selectionStart !== null && selectionEnd !== null && index > selectionStart && index < selectionEnd);
-
-                         return (
-                            <TouchableOpacity 
-                                key={m}
-                                onPress={() => handleMonthPress(index)}
-                                activeOpacity={0.7}
-                                disabled={isPast}
-                                style={[
-                                    styles.monthBox,
-                                    isPast && styles.monthPast,
-                                    isCurrent && styles.monthCurrent,
-                                    isSelected && styles.monthSelected
-                                ]}
-                            >
-                                <Text style={[
-                                    styles.monthText,
-                                    isPast && styles.monthTextPast,
-                                    isSelected && styles.monthTextSelected
-                                ]}>{m}</Text>
-                                
-                                {isCurrent && <View style={styles.currentDot} />}
-                            </TouchableOpacity>
-                         );
-                    })}
-                </View>
-                <Text style={styles.hintText}>
-                    {t('onboarding.step5.hint')}
-                </Text>
+             {/* Headline */}
+            <View style={styles.headlineSection}>
+              <Text style={styles.headline}>
+                {t('onboarding.step5.headlineStart')} <Text style={styles.headlineAccent}>{t('onboarding.step5.headlineAccent')}</Text>
+              </Text>
+              <Text style={styles.subtitle}>{t('onboarding.step5.subtitle')}</Text>
             </View>
+            
+            {/* Horizontal Month Selector & Calendar */}
+            <View style={styles.calendarSection}>
+                {/* Month Tabs */}
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    contentContainerStyle={styles.monthSelectorContent}
+                    style={styles.monthSelectorScroll}
+                >
+                    {monthsList.map((mDate: Date, index: number) => {
+                        const isSelected = selectedMonthIndex === index;
+                        return (
+                            <TouchableOpacity 
+                                key={mDate.toString()}
+                                onPress={() => setSelectedMonthIndex(index)}
+                                style={[styles.monthTab, isSelected && styles.monthTabSelected]}
+                            >
+                                <Text style={[styles.monthTabText, isSelected && styles.monthTabTextSelected]}>
+                                    {mDate.toLocaleString('default', { month: 'short' }).toUpperCase()}
+                                </Text>
+                                {isSelected && <View style={styles.monthIndicator} />}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+
+                {/* Selected Month View */}
+                <View style={styles.activeMonthContainer}>
+                    <View style={styles.weekRowMain}>
+                        {weekDays.map(d => (
+                            <Text key={d} style={styles.weekDayText}>{d}</Text>
+                        ))}
+                    </View>
+                    
+                    <View style={styles.activeMonthGrid}>
+                        {/* Show Year/Month Title for context */}
+                        <Text style={styles.activeMonthTitle}>
+                            {monthsList[selectedMonthIndex].toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()}
+                        </Text>
+                        <View style={styles.daysGrid}>
+                            {renderMonthGrid(monthsList[selectedMonthIndex])}
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            {/* Goals List (keep existing) */} 
+            {/* ... */}
 
             {/* Goals List */}
             <View style={styles.goalsSection}>
-                {goals.map((g) => (
-                    <View key={g.id} style={styles.goalCard}>
-                        <View style={styles.goalTimeline}>
-                             <View style={[styles.timelineDot, {backgroundColor: Colors.primary}]} />
-                             <View style={styles.timelineLine} />
-                        </View>
-                        <View style={styles.goalContent}>
-                            <Text style={styles.goalDates}>
-                                {months[g.start.getMonth()]} - {months[g.end.getMonth()]}
-                            </Text>
-                            <Text style={styles.goalText}>{g.text}</Text>
-                        </View>
-                        <TouchableOpacity onPress={() => setGoals(prev => prev.filter(item => item.id !== g.id))}>
-                            <MaterialIcons name="close" size={16} color="rgba(255,255,255,0.3)" />
-                        </TouchableOpacity>
-                    </View>
-                ))}
+                <Text style={styles.sectionTitle}>TUS HITOS</Text>
+                {goals.length === 0 ? (
+                     <View style={styles.emptyState}>
+                         <MaterialIcons name="event-note" size={48} color="rgba(255,255,255,0.1)" />
+                         <Text style={styles.emptyStateText}>Selecciona un rango para añadir un hito</Text>
+                     </View>
+                ) : (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap: 12}}>
+                        {goals.sort((a: { start: Date }, b: { start: Date }) => a.start.getTime() - b.start.getTime()).map((g: { id: string; text: string; start: Date; end: Date }) => (
+                            <View key={g.id} style={styles.glassCard}>
+                                <View style={styles.cardIconBox}>
+                                     <MaterialIcons name="emoji-flags" size={24} color={Colors.primary} />
+                                </View>
+                                <View>
+                                    <Text style={styles.cardCategory}>GOAL</Text>
+                                    <Text style={styles.cardTitle}>{g.text}</Text>
+                                    <Text style={styles.cardDate}>
+                                        {g.start.getDate()}/{g.start.getMonth()+1} - {g.end.getDate()}/{g.end.getMonth()+1}
+                                    </Text>
+                                </View>
+                                <TouchableOpacity 
+                                    style={{position:'absolute', top:8, right:8}}
+                                    onPress={() => setGoals((prev) => prev.filter((item: { id: string }) => item.id !== g.id))}
+                                >
+                                    <MaterialIcons name="close" size={16} color="rgba(255,255,255,0.3)" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </ScrollView>
+                )}
             </View>
 
-            <View style={{ height: 100 }} />
+            {/* Bottom Button (Now inline) */}
+            <View style={styles.bottomContainer}>
+                <TouchableOpacity 
+                    onPress={handleFinish}
+                    style={styles.finishButton}
+                    activeOpacity={0.9}
+                >
+                    <Text style={styles.finishButtonText}>
+                         {t('onboarding.step5.complete')}
+                    </Text>
+                    <MaterialIcons name="arrow-forward" size={24} color={Colors.backgroundDark} />
+                </TouchableOpacity>
+            </View>
         </ScrollView>
 
-        {/* Bottom Fixed Button */}
-        <View style={styles.bottomContainer}>
-            <TouchableOpacity 
-                onPress={handleFinish}
-                style={styles.finishButton}
-                activeOpacity={0.9}
-            >
-                <Text style={styles.finishButtonText}>
-                     {t('onboarding.step5.complete')} (Step 6)
-                </Text>
-                <MaterialIcons name="arrow-forward" size={24} color={Colors.backgroundDark} />
-            </TouchableOpacity>
-        </View>
-
-        {/* Modal */}
-        <Modal visible={isAddingGoal} transparent animationType="fade">
+        {/* Range Modal */}
+        <Modal visible={isAddingGoal} transparent animationType="slide">
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>{t('onboarding.step5.modalTitle')}</Text>
-                     <Text style={styles.modalSubtitle}>
-                         {selectionStart !== null ? months[selectionStart] : ''} - {selectionEnd !== null ? months[selectionEnd] : ''}
-                    </Text>
-                    <TextInput 
-                        style={styles.modalInput}
-                        placeholder={t('onboarding.step5.modalPlaceholder') || "Enter goal..."}
-                        placeholderTextColor="rgba(255,255,255,0.3)"
-                        value={tempGoalText}
-                        onChangeText={setTempGoalText}
-                        autoFocus
-                    />
-                    <View style={styles.modalButtons}>
-                         <TouchableOpacity onPress={() => { setIsAddingGoal(false); setSelectionStart(null); }} style={styles.modalCancel}>
-                            <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
+                    <View style={styles.modalHeader}>
+                        <View>
+                            <Text style={styles.modalTitle}>Nuevo Hito</Text>
+                            <Text style={styles.modalSubtitle}>
+                                {range.start ? `${range.start.getDate()} ${range.start.toLocaleString('default',{month:'short'})}` : ''} 
+                                {range.end ? ` - ${range.end.getDate()} ${range.end.toLocaleString('default',{month:'short'})}` : ''}
+                            </Text>
+                        </View>
+                        <TouchableOpacity onPress={() => setIsAddingGoal(false)}>
+                            <MaterialIcons name="close" size={24} color="rgba(255,255,255,0.5)" />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={addGoal} style={styles.modalConfirm}>
-                            <Text style={[styles.modalButtonText, { color: Colors.backgroundDark }]}>{t('common.save')}</Text>
+                    </View>
+                    
+                    <View style={styles.glowingInputContainer}>
+                        <TextInput 
+                            style={styles.modalInput}
+                            placeholder="ej. Correr una Maratón..."
+                            placeholderTextColor="rgba(255,255,255,0.3)"
+                            value={tempGoalText}
+                            onChangeText={setTempGoalText}
+                            autoFocus
+                        />
+                    </View>
+
+                    <Text style={styles.suggestionTitle}>Sugerencias:</Text>
+                    <View style={styles.chipContainer}>
+                        {exampleGoals.map((ex) => (
+                            <TouchableOpacity 
+                                key={ex} 
+                                style={styles.chip}
+                                onPress={() => addGoal(ex)}
+                            >
+                                <Text style={styles.chipText}>{ex}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <View style={{marginTop: 24}}>
+                         <TouchableOpacity 
+                            onPress={() => addGoal()} 
+                            style={[styles.modalConfirm, !tempGoalText.trim() && {opacity: 0.5}]}
+                            disabled={!tempGoalText.trim()}
+                        >
+                            <Text style={[styles.modalButtonText, { color: Colors.backgroundDark }]}>Añadir Hito</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -236,180 +360,357 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  headerContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: 'rgba(255,255,255,0.05)',
+  // Header
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  spacer: {
+    width: 40,
+    height: 40,
+  },
+  progressContainer: {
+    alignItems: 'center',
+  },
+  progressText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  progressBarBg: {
+    height: 4,
+    width: 80,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    width: '83%', // 5/6
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
   },
   backButton: {
-      padding: 8,
-      backgroundColor: 'rgba(255,255,255,0.05)',
+      height: 40,
+      width: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
       borderRadius: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  headerTitle: {
-      color: '#fff',
-      fontSize: 18,
-      fontWeight: 'bold',
-  },
-  headerAccent: {
-      color: Colors.primary,
-      fontStyle: 'italic',
-  },
+  // Content
   scrollView: {
       flex: 1,
   },
   scrollContent: {
       padding: 24,
+      paddingTop: 10,
   },
-  progressSection: {
+  headlineSection: {
       marginBottom: 32,
   },
-  yearText: {
-      color: 'rgba(255,255,255,0.8)',
+  headline: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  headlineAccent: {
+    color: Colors.primary,
+    fontStyle: 'italic',
+  },
+  subtitle: {
+      color: 'rgba(255,255,255,0.5)',
       fontSize: 14,
-      fontWeight: '600',
-      marginBottom: 8,
+      marginTop: 8,
   },
-  barContainer: {
-      height: 8,
-      backgroundColor: 'rgba(255,255,255,0.1)',
-      borderRadius: 4,
-      marginBottom: 8,
-      overflow: 'hidden',
-  },
-  barFill: {
-      height: '100%',
-      backgroundColor: Colors.primary,
-      borderRadius: 4,
-  },
-  progressLabels: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-  },
-  progressLabel: {
-      color: 'rgba(255,255,255,0.4)',
-      fontSize: 12,
-  },
-  timelineSection: {
+  // Calendar
+  calendarSection: {
       marginBottom: 32,
   },
-  sectionTitle: {
-      color: '#fff',
-      fontSize: 16,
-      marginBottom: 16,
-      lineHeight: 24,
-  },
-  monthsGrid: {
+  weekRowMain: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-  },
-  monthBox: {
-      width: (width - 48 - 24) / 4, // 4 cols
-      aspectRatio: 1.5,
-      backgroundColor: 'rgba(255,255,255,0.05)',
+      marginBottom: 16,
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      paddingVertical: 12,
       borderRadius: 12,
+  },
+  weekDayText: {
+      flex: 1,
+      textAlign: 'center',
+      color: 'rgba(255,255,255,0.3)',
+      fontSize: 12,
+      fontWeight: 'bold',
+  },
+  // Horizontal Month Selector
+  monthSelectorScroll: {
+      marginBottom: 20,
+  },
+  monthSelectorContent: {
+      gap: 12,
+      paddingHorizontal: 4,
+  },
+  monthTab: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
   },
-  monthPast: {
-      opacity: 0.3,
+  monthTabSelected: {
+      // maybe bg? keep simple with text and indicator
   },
-  monthCurrent: {
-      borderColor: Colors.primary,
-      backgroundColor: 'rgba(13, 242, 89, 0.1)',
-  },
-  monthSelected: {
-      backgroundColor: Colors.primary,
-      borderColor: Colors.primary,
-  },
-  monthText: {
-      color: 'rgba(255,255,255,0.6)',
+  monthTabText: {
+      color: 'rgba(255,255,255,0.4)',
+      fontSize: 14,
       fontWeight: '600',
   },
-  monthTextPast: {
-      color: 'rgba(255,255,255,0.3)',
-  },
-  monthTextCurrent: {
+  monthTabTextSelected: {
       color: '#fff',
       fontWeight: 'bold',
   },
-  monthTextSelected: {
+  monthIndicator: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: Colors.primary,
+      marginTop: 4,
+  },
+  activeMonthContainer: {
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      borderRadius: 24,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.05)',
+  },
+  activeMonthGrid: {
+      marginTop: 8,
+  },
+  activeMonthTitle: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 16,
+      textAlign: 'center',
+      letterSpacing: 1,
+  },
+  daysGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+  },
+  dayCell: {
+      width: '14.28%',
+      aspectRatio: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+      marginBottom: 4,
+  },
+  dayCellEmpty: {
+     width: '14.28%',
+     aspectRatio: 1, 
+  },
+  dayCellToday: {
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.3)',
+  },
+  dayCellSelected: {
+      backgroundColor: Colors.primary,
+  },
+  dayCellInRange: {
+      backgroundColor: 'rgba(57, 255, 20, 0.3)', // Semi-transparent neon green
+  },
+  dayCellHasGoal: {
+      // Maybe a subtle border or dot is enough if not selected range
+  },
+  dayText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '500',
+  },
+  dayTextToday: {
+      fontWeight: 'bold',
+      color: Colors.primary,
+  },
+  dayTextSelected: {
       color: Colors.backgroundDark,
       fontWeight: 'bold',
   },
-  currentDot: {
+  goalDot: {
       width: 4,
       height: 4,
-      backgroundColor: Colors.primary,
       borderRadius: 2,
+      backgroundColor: Colors.primary,
       position: 'absolute',
       bottom: 6,
   },
-  hintText: {
-      color: 'rgba(255,255,255,0.3)',
-      fontSize: 12,
-      marginTop: 12,
-      fontStyle: 'italic',
-  },
+  // Goals
   goalsSection: {
       marginBottom: 32,
   },
-  goalCard: {
-      flexDirection: 'row',
+  sectionTitle: {
+      color: 'rgba(255,255,255,0.5)',
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 2,
       marginBottom: 16,
-      backgroundColor: 'rgba(255,255,255,0.05)',
-      borderRadius: 12,
-      padding: 12,
+      textTransform: 'uppercase',
+  },
+  emptyState: {
       alignItems: 'center',
+      justifyContent: 'center',
+      padding: 30,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderStyle: 'dashed',
+      borderRadius: 16,
   },
-  goalTimeline: {
-      marginRight: 12,
-      alignItems: 'center',
-      width: 16,
-  },
-  timelineLine: {
-      width: 2,
-      height: '100%',
-      backgroundColor: 'rgba(255,255,255,0.1)',
-      position: 'absolute',
-  },
-  timelineDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: Colors.primary,
-      marginTop: 6,
-  },
-  goalContent: {
-      flex: 1,
-  },
-  goalDates: {
-      color: Colors.primary,
+  emptyStateText: {
+      color: 'rgba(255,255,255,0.3)',
+      marginTop: 8,
       fontSize: 12,
+  },
+  glassCard: {
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderRadius: 16,
+      padding: 16,
+      width: 150,
+      height: 140,
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.05)',
+  },
+  cardIconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
+      backgroundColor: 'rgba(57, 255, 20, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+  },
+  cardCategory: {
+      color: 'rgba(255,255,255,0.4)',
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginBottom: 2,
+  },
+  cardTitle: {
+      color: '#fff',
+      fontSize: 14,
       fontWeight: 'bold',
       marginBottom: 4,
   },
-  goalText: {
-      color: '#fff',
-      fontSize: 14,
+  cardDate: {
+      color: Colors.primary,
+      fontSize: 10,
+      opacity: 0.8,
   },
-  bottomContainer: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
+  // Modal
+  modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      justifyContent: 'flex-end',
+  },
+  modalContent: {
+      backgroundColor: '#111A15', // Darker forest
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
       padding: 24,
-      paddingBottom: 40,
-      backgroundColor: Colors.backgroundDark,
+      paddingBottom: 48,
       borderTopWidth: 1,
-      borderTopColor: 'rgba(255,255,255,0.05)',
+      borderColor: 'rgba(255,255,255,0.05)',
+  },
+  modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 16,
+  },
+  modalTitle: {
+      color: '#fff',
+      fontSize: 24,
+      fontWeight: 'bold',
+  },
+  modalSubtitle: {
+      color: Colors.primary,
+      fontSize: 14,
+      fontWeight: '600',
+      marginTop: 4,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+  },
+  glowingInputContainer: {
+      backgroundColor: 'rgba(0,0,0,0.2)',
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+      marginBottom: 24,
+      shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+  },
+  modalInput: {
+      padding: 16,
+      color: '#fff',
+      fontSize: 18,
+  },
+  suggestionTitle: {
+      color: 'rgba(255,255,255,0.4)',
+      fontSize: 11,
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: 12,
+  },
+  chipContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      justifyContent: 'space-between', // Distribute space
+  },
+  chip: {
+      width: '48%', // allow 2 per row with gap
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      borderRadius: 16,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+  },
+  chipText: {
+      color: '#fff',
+      fontSize: 13, // Slightly smaller to fit lines
+      fontWeight: '600',
+      textAlign: 'center',
+  },
+  modalConfirm: {
+      backgroundColor: Colors.primary,
+      height: 56,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+  },
+  modalButtonText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+  },
+  // Bottom
+  bottomContainer: {
+      padding: 0,
+      paddingTop: 32,
+      paddingBottom: 40,
   },
   finishButton: {
       backgroundColor: Colors.primary,
@@ -419,61 +720,14 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
       gap: 12,
+      shadowColor: Colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
   },
   finishButtonText: {
       fontSize: 16,
       fontWeight: 'bold',
       color: Colors.backgroundDark,
-  },
-  // Modal
-  modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-  },
-  modalContent: {
-      width: '100%',
-      backgroundColor: '#1c1c1e',
-      borderRadius: 24,
-      padding: 24,
-  },
-  modalTitle: {
-      color: '#fff',
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 8,
-  },
-  modalSubtitle: {
-      color: Colors.primary,
-      fontSize: 14,
-      marginBottom: 24,
-  },
-  modalInput: {
-      backgroundColor: 'rgba(255,255,255,0.05)',
-      borderRadius: 12,
-      padding: 16,
-      color: '#fff',
-      fontSize: 16,
-      marginBottom: 24,
-  },
-  modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      gap: 12,
-  },
-  modalCancel: {
-      padding: 12,
-  },
-  modalConfirm: {
-      backgroundColor: Colors.primary,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-  },
-  modalButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
   },
 });

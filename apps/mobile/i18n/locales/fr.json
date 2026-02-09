@@ -54,6 +54,34 @@
       "buildMuscle": "Se muscler",
       "energy": "Énergie",
       "mindfulness": "Pleine conscience"
+    },
+    "contract": {
+      "screenTitle": "Strategy Report",
+      "mainTitle": "Your Strategy \nis Ready",
+      "subTitle": "We've engineered a path optimized for your unique metabolic profile.",
+      "bmiTitle": "BMI Analysis",
+      "bmiStatus": "Healthy Index",
+      "ageTitle": "Physical Age",
+      "ageVs": "vs",
+      "ageEff": "Age Efficiency",
+      "targetTitle": "Target Goal",
+      "targetMode": "Strength Mode",
+      "focusTitle": "Initial Focus",
+      "focusSubtitle": "First 14 Days",
+      "projectionTitle": "AI PROJECTION",
+      "projectionText": "Leveraging your <bold>Yearly Vision</bold>, our neural engine predicts a <highlight>4.2kg</highlight> lean mass increase in <bold>12 weeks</bold>.",
+      "projection": {
+        "muscle": "Based on your current BMI of <highlight>{{bmi}}</highlight>, we predict a lean mass increase of <highlight>~4-6kg</highlight> in <bold>12 weeks</bold>.",
+        "weight": "Optimizing your metabolism could yield a <highlight>5-8kg</highlight> reduction in the first <bold>90 days</bold>.",
+        "energy": "Targeting sleep and nutrition patterns to increase daily energy levels by <highlight>40%</highlight>.",
+        "mindfulness": "Establishing a daily routine to reduce stress markers by <highlight>50%</highlight> in <bold>12 weeks</bold>.",
+        "default": "Our neural engine predicts optimized results in <bold>12 weeks</bold> based on your unique profile."
+      },
+      "match": "Match",
+      "historical": "Historical data analysis",
+      "continueBtn": "Continue to choose your plan",
+      "analyzing": "Analyzing your profile...",
+      "pleaseWait": "Building your personalized plan"
     }
   }
 }

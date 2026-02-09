@@ -21,7 +21,6 @@ export class GamificationService {
   }
 
   async createInitialStats(userId: string) {
-    console.log(`[GamificationService] Creating initial stats for ${userId}`);
     return await this.prisma.userStats.create({
       data: {
         userId,
@@ -29,6 +28,7 @@ export class GamificationService {
         level: 1,
         currentStreak: 0,
         longestStreak: 0,
+        gems: 0,
       },
     });
   }
@@ -45,6 +45,7 @@ export class GamificationService {
             level: 1,
             currentStreak: 0,
             longestStreak: 0,
+            gems: 0,
           },
         });
       }
@@ -93,9 +94,66 @@ export class GamificationService {
       where: { userId },
       data: {
         currentStreak: statsEntity.currentStreak,
-        longestStreak: statsEntity.longestStreak, // Accessing private prop via getter if needed, but props are public in interface
+        longestStreak: statsEntity.longestStreak,
         lastActivityDate: new Date(),
       },
+    });
+  }
+
+  private static readonly STREAK_FREEZE_COST = 50;
+
+  private static getYesterday(): Date {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - 1);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }
+
+  async getStreakStatus(userId: string): Promise<{
+    atRisk: boolean;
+    canUseFreeze: boolean;
+    currentStreak: number;
+    gems: number;
+    gemsRequired: number;
+  }> {
+    const stats = await this.getUserStats(userId);
+    const yesterday = GamificationService.getYesterday();
+    const last = stats.lastActivityDate ? new Date(stats.lastActivityDate) : null;
+    const lastDay = last ? new Date(last) : null;
+    if (lastDay) lastDay.setUTCHours(0, 0, 0, 0);
+    const atRisk = !!last && lastDay!.getTime() < yesterday.getTime();
+    const gemsRequired = GamificationService.STREAK_FREEZE_COST;
+    const canUseFreeze = atRisk && (stats.gems ?? 0) >= gemsRequired;
+
+    return {
+      atRisk,
+      canUseFreeze,
+      currentStreak: stats.currentStreak,
+      gems: stats.gems ?? 0,
+      gemsRequired,
+    };
+  }
+
+  async useStreakFreeze(userId: string): Promise<{ ok: boolean; message?: string }> {
+    const status = await this.getStreakStatus(userId);
+    if (!status.atRisk) return { ok: false, message: 'Streak is not at risk' };
+    if (!status.canUseFreeze) return { ok: false, message: 'Not enough gems' };
+    const yesterday = GamificationService.getYesterday();
+    await this.prisma.userStats.update({
+      where: { userId },
+      data: {
+        gems: { decrement: GamificationService.STREAK_FREEZE_COST },
+        lastActivityDate: yesterday,
+      },
+    });
+    return { ok: true };
+  }
+
+  async addGems(userId: string, amount: number): Promise<void> {
+    const stats = await this.getUserStats(userId);
+    await this.prisma.userStats.update({
+      where: { userId },
+      data: { gems: (stats.gems ?? 0) + amount },
     });
   }
 }
