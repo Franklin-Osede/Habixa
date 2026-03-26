@@ -5,9 +5,7 @@ import { Result } from '../../../shared/domain/result';
 
 @Injectable()
 export class UpdateProfileUseCase {
-  constructor(
-    @Inject(UserRepository) private userRepository: UserRepository,
-  ) {}
+  constructor(@Inject(UserRepository) private userRepository: UserRepository) {}
 
   async execute(userId: string, dto: UpdateProfileDto): Promise<Result<void>> {
     const user = await this.userRepository.findById(userId);
@@ -20,10 +18,10 @@ export class UpdateProfileUseCase {
     // we need to update the repository to handle this 'upsert' logic.
     // For now, assuming the repository handles the persistence of these fields
     // either directly on the User aggregate or via a linked UserStats update.
-    
-    // In strict DDD, we might load a 'UserProfile' aggregate. 
-    // Given the simplicity and current schema (everything in one UserStats table), 
-    // we will delegate the persistence to the repository's 'saveProfile' method 
+
+    // In strict DDD, we might load a 'UserProfile' aggregate.
+    // Given the simplicity and current schema (everything in one UserStats table),
+    // we will delegate the persistence to the repository's 'saveProfile' method
     // which we will add.
 
     const integrationsList = dto.integrations

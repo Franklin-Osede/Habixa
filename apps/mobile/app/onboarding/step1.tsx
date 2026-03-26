@@ -13,7 +13,7 @@ export default function OnboardingStep1() {
   
   // State
   const [mainQuest, setMainQuest] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | null>('Lose Weight');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [unitSystem, setUnitSystem] = useState<'metric' | 'imperial'>('metric');
   
   // Values
@@ -35,15 +35,16 @@ export default function OnboardingStep1() {
 
   const handleToggleTag = (tagLabel: string) => {
       // Logic to toggle selection
-      if (selectedTag === tagLabel) setSelectedTag(null);
-      else setSelectedTag(tagLabel);
+      setSelectedTags(prev => 
+        prev.includes(tagLabel) ? prev.filter(t => t !== tagLabel) : [...prev, tagLabel]
+      );
   };
   
   const handleAddTag = () => {
     if (newTagText.trim() && !customTags.includes(newTagText.trim())) {
         const newTag = newTagText.trim();
         setCustomTags([...customTags, newTag]);
-        setSelectedTag(newTag); // Auto Select
+        setSelectedTags([...selectedTags, newTag]); // Auto Select
     }
     setNewTagText('');
     setIsAddingTag(false);
@@ -54,7 +55,7 @@ export default function OnboardingStep1() {
       pathname: '/onboarding/step2',
       params: { 
         mainQuest,
-        selectedTag, 
+        selectedTags: selectedTags.join(','), 
         unitSystem, 
         age, 
         weight, 
@@ -126,7 +127,7 @@ export default function OnboardingStep1() {
             {/* Chips */}
             <View style={styles.chipsContainer}>
               {[...tags, ...customTags.map(ct => ({ id: ct, label: ct }))].map((tag, index) => {
-                 const isLabelMatch = selectedTag === tag.label;
+                 const isLabelMatch = selectedTags.includes(tag.label);
                  return (
                   <TouchableOpacity 
                     key={tag.id}
@@ -269,8 +270,8 @@ export default function OnboardingStep1() {
             {/* Moved Button Here (Inside standard flow) */}
             <TouchableOpacity 
                 onPress={handleNext}
-                disabled={!selectedTag && !mainQuest.trim()}
-                style={[styles.nextButtonInline, (!selectedTag && !mainQuest.trim()) && { opacity: 0.5 }]}
+                disabled={selectedTags.length === 0 && !mainQuest.trim()}
+                style={[styles.nextButtonInline, (selectedTags.length === 0 && !mainQuest.trim()) && { opacity: 0.5 }]}
                 activeOpacity={0.9}
             >
                 <Text style={styles.nextButtonText}>

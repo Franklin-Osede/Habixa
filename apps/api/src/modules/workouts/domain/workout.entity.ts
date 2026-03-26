@@ -1,4 +1,3 @@
-
 export class WorkoutSet {
   constructor(
     public readonly reps: number,

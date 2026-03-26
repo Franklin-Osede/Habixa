@@ -77,9 +77,30 @@ describe('saga-path domain', () => {
 
   describe('buildPathNodes', () => {
     const tasks: RawPathTask[] = [
-      { id: 'a', dayIndex: 1, title: 'Day 1', durationMinutes: 15, xpReward: 50, gemsReward: 10 },
-      { id: 'b', dayIndex: 2, title: 'Day 2', durationMinutes: 15, xpReward: 50, gemsReward: 10 },
-      { id: 'c', dayIndex: 3, title: 'Day 3', durationMinutes: 15, xpReward: 50, gemsReward: 10 },
+      {
+        id: 'a',
+        dayIndex: 1,
+        title: 'Day 1',
+        durationMinutes: 15,
+        xpReward: 50,
+        gemsReward: 10,
+      },
+      {
+        id: 'b',
+        dayIndex: 2,
+        title: 'Day 2',
+        durationMinutes: 15,
+        xpReward: 50,
+        gemsReward: 10,
+      },
+      {
+        id: 'c',
+        dayIndex: 3,
+        title: 'Day 3',
+        durationMinutes: 15,
+        xpReward: 50,
+        gemsReward: 10,
+      },
     ];
 
     it('returns correct status for each node when currentDayIndex is 2', () => {

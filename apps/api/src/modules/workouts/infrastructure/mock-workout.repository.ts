@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { WorkoutRepository } from '../domain/repositories/workout.repository';
 import { Workout } from '../domain/workout.entity';
@@ -10,9 +9,10 @@ export class MockWorkoutRepository implements WorkoutRepository {
   async save(workout: Workout): Promise<void> {
     this.workouts.push(workout);
     console.log('Saved workout:', workout.name);
+    return Promise.resolve();
   }
 
   async findByUserId(userId: string): Promise<Workout[]> {
-    return this.workouts.filter(w => w.userId === userId);
+    return Promise.resolve(this.workouts.filter((w) => w.userId === userId));
   }
 }

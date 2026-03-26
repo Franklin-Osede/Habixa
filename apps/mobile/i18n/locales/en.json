@@ -205,8 +205,13 @@
       },
       "match": "Match",
       "historical": "Historical data analysis",
-      "continueBtn": "Continue to choose your plan"
+      "continueBtn": "Continue to choose your plan",
+      "analyzing": "Analyzing your profile...",
+      "pleaseWait": "Building your personalized plan",
+      "metabolism": "Metabolism Reset",
+      "profileSummary": "STRATEGY PROFILE"
     },
+
     "step6": {
       "progress": "Step 6 of 6",
       "headlineStart": "Connect to",
@@ -243,6 +248,24 @@
       "stress": "Stress Reduction",
       "productivity": "Productivity"
     }
+  },
+  "challenge": {
+      "screenTitle": "Choose Your Journey",
+      "screenSubtitle": "Select a duration to start your challenge.",
+      "recommended": "RECOMMENDED FOR YOU",
+      "generating": "Generating Plan...",
+      "successTitle": "Challenge Accepted!",
+      "successMsg": "You have started a {{days}}-day journey. Let's go!",
+      "letsGo": "Let's Go",
+      "errorTitle": "Error",
+      "errorMsg": "Failed to start challenge. Please try again.",
+      "phases": {
+        "kickoff": { "title": "Day 1 Kickoff", "desc": "Just try it out." },
+        "reset": { "title": "3-Day Reset", "desc": "Perfect for a weekend." },
+        "warrior": { "title": "7-Day Warrior", "desc": "Build a solid habit." },
+        "transformation": { "title": "15-Day Transformation", "desc": "See real results." },
+        "master": { "title": "30-Day Master", "desc": "Change your life." }
+      }
   },
   "menu": {
       "profile": {

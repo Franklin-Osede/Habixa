@@ -31,7 +31,9 @@ export class GamificationController {
   @Get('streak-status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Streak at risk? Can use freeze? (for Streak Rescue modal)' })
+  @ApiOperation({
+    summary: 'Streak at risk? Can use freeze? (for Streak Rescue modal)',
+  })
   async getStreakStatus(@Request() req: { user: { userId: string } }) {
     return this.gamificationService.getStreakStatus(req.user.userId);
   }

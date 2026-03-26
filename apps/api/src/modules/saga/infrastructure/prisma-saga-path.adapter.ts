@@ -22,7 +22,9 @@ export class PrismaSagaPathAdapter implements SagaPathPort {
   async getPathForUser(userId: string): Promise<SagaPathData | null> {
     let progress = await this.prisma.userProgress.findFirst({
       where: { userId, status: 'IN_PROGRESS' },
-      include: { challenge: { include: { tasks: { orderBy: { dayIndex: 'asc' } } } } },
+      include: {
+        challenge: { include: { tasks: { orderBy: { dayIndex: 'asc' } } } },
+      },
     });
 
     if (!progress) {
@@ -43,7 +45,9 @@ export class PrismaSagaPathAdapter implements SagaPathPort {
           status: 'IN_PROGRESS',
           currentDay: 1,
         },
-        include: { challenge: { include: { tasks: { orderBy: { dayIndex: 'asc' } } } } },
+        include: {
+          challenge: { include: { tasks: { orderBy: { dayIndex: 'asc' } } } },
+        },
       });
     }
 
@@ -59,7 +63,9 @@ export class PrismaSagaPathAdapter implements SagaPathPort {
   async completeCurrentDay(userId: string): Promise<CompleteDayResult | null> {
     const progress = await this.prisma.userProgress.findFirst({
       where: { userId, status: 'IN_PROGRESS' },
-      include: { challenge: { include: { tasks: { orderBy: { dayIndex: 'asc' } } } } },
+      include: {
+        challenge: { include: { tasks: { orderBy: { dayIndex: 'asc' } } } },
+      },
     });
     if (!progress) return null;
 

@@ -5,7 +5,7 @@ services:
     image: postgres:16-alpine
     container_name: habixa_postgres
     ports:
-      - "5433:5432"
+      - "5435:5432"
     environment:
       POSTGRES_USER: habixa_user
       POSTGRES_PASSWORD: habixa_password
@@ -19,7 +19,7 @@ services:
     image: redis:7-alpine
     container_name: habixa_redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:

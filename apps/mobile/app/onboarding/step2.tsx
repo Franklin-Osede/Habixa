@@ -48,7 +48,7 @@ export default function OnboardingStep2() {
   const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [experienceLevel, setExperienceLevel] = useState('Beginner');
-  const [equipment, setEquipment] = useState('Gym');
+  const [equipment, setEquipment] = useState<string[]>(['gym']);
   
   const habitOptions = [
     { id: 'exercise', label: t('onboarding.habits.exercise') },
@@ -84,13 +84,23 @@ export default function OnboardingStep2() {
     );
   };
 
+  const toggleEquipment = (eqId: string) => {
+    setEquipment((prev: string[]) => 
+      prev.includes(eqId) 
+        ? prev.filter((e: string) => e !== eqId)
+        : [...prev, eqId]
+    );
+  };
+
   const handleNext = () => {
     router.push({
       pathname: '/onboarding/step3',
       params: { 
         ...params, // Pass through previous params
         selectedHabits: selectedHabits.join(','),
-        selectedGoals: selectedGoals.join(',')
+        selectedGoals: selectedGoals.join(','),
+        equipment: equipment.join(','),
+        experienceLevel
       }
     });
   };
@@ -150,10 +160,10 @@ export default function OnboardingStep2() {
                   {/* BMI Scale Indicator */}
                   <View style={styles.scaleContainer}>
                       <View style={styles.scaleBar}>
-                          <View style={[styles.scaleSegment, { backgroundColor: '#fbbf24', flex: 1.85 }]} /> {/* <18.5 */}
-                          <View style={[styles.scaleSegment, { backgroundColor: '#0df259', flex: 6.4 }]} /> {/* 18.5-24.9 */}
-                          <View style={[styles.scaleSegment, { backgroundColor: '#fbbf24', flex: 5 }]} />   {/* 25-29.9 */}
-                          <View style={[styles.scaleSegment, { backgroundColor: '#ef4444', flex: 10 }]} />  {/* >30 */}
+                          <View style={[styles.scaleSegment, { backgroundColor: '#fbbf24', flex: 1.85 }]} />
+                          <View style={[styles.scaleSegment, { backgroundColor: '#0df259', flex: 6.4 }]} />
+                          <View style={[styles.scaleSegment, { backgroundColor: '#fbbf24', flex: 5 }]} />
+                          <View style={[styles.scaleSegment, { backgroundColor: '#ef4444', flex: 10 }]} />
                       </View>
                       {/* Marker position: (BMI - 15) / (40 - 15) * 100% roughly */}
                       <View style={[
@@ -244,24 +254,27 @@ export default function OnboardingStep2() {
                     { id: 'gym', label: t('onboarding.step2.equipment.gym') },
                     { id: 'homeDumbbells', label: t('onboarding.step2.equipment.homeDumbbells') },
                     { id: 'bodyweight', label: t('onboarding.step2.equipment.bodyweight') }
-                  ].map((eq) => (
-                    <TouchableOpacity 
-                      key={eq.id}
-                      onPress={() => setEquipment(eq.id)}
-                      style={[
-                        styles.chip,
-                        equipment === eq.id ? styles.chipSelected : styles.chipUnselected
-                      ]}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[
-                        styles.chipText,
-                        equipment === eq.id ? styles.chipTextSelected : styles.chipTextUnselected
-                      ]}>
-                        {eq.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  ].map((eq) => {
+                    const isSelected = equipment.includes(eq.id);
+                    return (
+                      <TouchableOpacity 
+                        key={eq.id}
+                        onPress={() => toggleEquipment(eq.id)}
+                        style={[
+                          styles.chip,
+                          isSelected ? styles.chipSelected : styles.chipUnselected
+                        ]}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[
+                          styles.chipText,
+                          isSelected ? styles.chipTextSelected : styles.chipTextUnselected
+                        ]}>
+                          {eq.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             </View>

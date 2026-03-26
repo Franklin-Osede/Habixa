@@ -205,8 +205,13 @@
       },
       "match": "Coincidencia",
       "historical": "Análisis de datos históricos",
-      "continueBtn": "Continuar y elegir plan"
+      "continueBtn": "Continuar y elegir plan",
+      "analyzing": "Analizando tu perfil...",
+      "pleaseWait": "Construyendo tu plan personalizado",
+      "metabolism": "Reinicio Metabólico",
+      "profileSummary": "PERFIL DE ESTRATEGIA"
     },
+
     "step6": {
       "progress": "Paso 6 de 6",
       "headlineStart": "Conecta tu",
@@ -243,6 +248,24 @@
       "stress": "Reducción de Estrés",
       "productivity": "Aumento de Productividad"
     }
+  },
+  "challenge": {
+      "screenTitle": "Elige tu Viaje",
+      "screenSubtitle": "Selecciona una duración para comenzar tu desafío.",
+      "recommended": "RECOMENDADO PARA TI",
+      "generating": "Generando Plan...",
+      "successTitle": "¡Desafío Aceptado!",
+      "successMsg": "Has comenzado un viaje de {{days}} días. ¡Vamos!",
+      "letsGo": "¡Vamos!",
+      "errorTitle": "Error",
+      "errorMsg": "Error al iniciar el desafío. Por favor intenta de nuevo.",
+      "phases": {
+        "kickoff": { "title": "Despegue Día 1", "desc": "Solo pruébalo." },
+        "reset": { "title": "Reinicio 3 Días", "desc": "Perfecto para un fin de semana." },
+        "warrior": { "title": "Guerrero 7 Días", "desc": "Construye un hábito sólido." },
+        "transformation": { "title": "Transformación 15 Días", "desc": "Ver resultados reales." },
+        "master": { "title": "Maestría 30 Días", "desc": "Cambia tu vida." }
+      }
   },
   "menu": {
       "profile": {

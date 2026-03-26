@@ -49,7 +49,14 @@ export class PrismaUserRepository implements UserRepository {
   async findProfileForMe(userId: string): Promise<UserProfileRead | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, level: true, xp: true, streakCurrent: true, currentDayIndex: true },
+      select: {
+        id: true,
+        email: true,
+        level: true,
+        xp: true,
+        streakCurrent: true,
+        currentDayIndex: true,
+      },
     });
     if (!user) return null;
 

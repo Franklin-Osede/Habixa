@@ -4,105 +4,166 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChallengeService } from '../../src/services/challenge.service';
 import { Ionicons } from '@expo/vector-icons';
-
-// Using a simple array for now. In real app, could come from config.
-const CHALLENGE_OPTIONS = [
-  { days: 1, title: 'Day 1 Kickoff', description: 'Just try it out.', icon: 'rocket-outline', color: 'bg-blue-100', border: 'border-blue-300' },
-  { days: 3, title: '3-Day Reset', description: 'Perfect for a weekend.', icon: 'water-outline', color: 'bg-green-100', border: 'border-green-300' },
-  { days: 7, title: '7-Day Warrior', description: 'Build a solid habit.', icon: 'flame-outline', color: 'bg-orange-100', border: 'border-orange-300' },
-  { days: 15, title: '15-Day Transformation', description: 'See real results.', icon: 'barbell-outline', color: 'bg-purple-100', border: 'border-purple-300' },
-  { days: 30, title: '30-Day Master', description: 'Change your life.', icon: 'trophy-outline', color: 'bg-yellow-100', border: 'border-yellow-300' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function ChallengeSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
-  // Parse params
-  const recommendedDays = params.recommendedDuration ? Number(params.recommendedDuration) : null;
+  const CHALLENGE_OPTIONS = [
+    { days: 1, key: 'kickoff', title: 'Despegue Día 1', desc: 'Solo pruébalo', icon: 'flash-outline' },
+    { days: 3, key: 'reset', title: 'Reinicio 3 Días', desc: 'Perfecto para un fin de semana', icon: 'calendar-outline' },
+    { days: 7, key: 'warrior', title: 'Guerrero 7 Días', desc: 'Construye un hábito sólido', icon: 'shield-checkmark-outline' },
+  ];
+
+  const FEATURED_OPTION = { days: 30, key: 'master', title: 'Maestría 30 Días', desc: 'Cambia tu vida', icon: 'sparkles-outline' };
+
+  const recommendedDays = params.recommendedDuration ? Number(params.recommendedDuration) : 30;
   const trackId = params.trackId 
     ? (Array.isArray(params.trackId) ? params.trackId[0] : params.trackId) 
     : 'MUSCLE_GAIN';
 
-  const handleSelectChallenge = async (days: number) => {
+  const [selectedDays, setSelectedDays] = useState<number | null>(recommendedDays);
+
+  const handleSelectChallenge = async () => {
+    if (!selectedDays) return;
     setLoading(true);
     try {
       await ChallengeService.startChallenge({
-        durationDays: days,
+        durationDays: selectedDays,
         trackId: trackId
       });
-      
-      Alert.alert('Challenge Accepted!', `You have started a ${days}-day journey. Let's go!`, [
-        { text: 'Let\'s Go', onPress: () => router.replace('/(tabs)') } // Redirect to Dashboard
-      ]);
+      if (Platform.OS === 'web') {
+        window.alert(t('challenge.successTitle', 'Challenge Accepted!') + '\n' + t('challenge.successMsg', { days: selectedDays, defaultValue: `Your ${selectedDays}-day journey begins now.` }));
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert(
+          t('challenge.successTitle', 'Challenge Accepted!'),
+          t('challenge.successMsg', { days: selectedDays, defaultValue: `Your ${selectedDays}-day journey begins now.` }),
+          [
+            { text: t('challenge.letsGo', "CONTINUAR"), onPress: () => router.replace('/(tabs)') }
+          ]
+        );
+      }
     } catch (error: any) {
       console.error(error);
-      Alert.alert('Error', 'Failed to start challenge. Please try again.');
+      if (Platform.OS === 'web') {
+        window.alert(t('challenge.errorTitle', 'Error') + ': ' + t('challenge.errorMsg', 'Failed to start challenge. Please try again.'));
+      } else {
+        Alert.alert(
+          t('challenge.errorTitle', 'Error'), 
+          t('challenge.errorMsg', 'Failed to start challenge. Please try again.')
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="px-6 py-4 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-             <Ionicons name="arrow-back" size={24} color="#333" />
+    <SafeAreaView className="flex-1 bg-[#0a140d]">
+      <View className="px-6 py-4 flex-row items-center justify-between mb-4">
+        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 items-center justify-center">
+            <Ionicons name="chevron-back" size={20} color="white" />
         </TouchableOpacity>
-        <View>
-            <Text className="text-2xl font-bold text-gray-900">Choose Your Journey</Text>
-            <Text className="text-gray-500 mt-1">Select a duration to start your challenge.</Text>
-        </View>
+      </View>
+      
+      <View className="px-6 mb-8">
+        <Text className="text-[#0df259] text-[10px] uppercase tracking-[0.3em] font-bold mb-2">
+            {t('challenge.strategy', 'Estrategia')}
+        </Text>
+        <Text className="text-4xl font-extrabold text-white tracking-tight">
+            {t('challenge.screenTitle', 'Elige tu Viaje')}
+        </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-2 pb-10" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-6 pb-24" showsVerticalScrollIndicator={false}>
         {CHALLENGE_OPTIONS.map((option) => {
-          const isRecommended = recommendedDays === option.days;
+          const isSelected = selectedDays === option.days;
           return (
             <TouchableOpacity
                 key={option.days}
-                className={`w-full mb-4 rounded-2xl p-5 border-2 flex-row items-center ${
-                    isRecommended ? 'bg-green-50 border-green-500 scale-[1.02]' : `${option.color} ${option.border}`
+                className={`w-full mb-4 rounded-3xl p-5 border flex-row items-center justify-between transition-transform ${
+                    isSelected ? 'bg-white/10 border-[#0df259] scale-[1.02]' : 'bg-white/5 border-white/10'
                 }`}
-                onPress={() => handleSelectChallenge(option.days)}
+                onPress={() => setSelectedDays(option.days)}
                 disabled={loading}
-                style={isRecommended ? 
-                  Platform.select({
-                    web: { boxShadow: '0px 4px 8px rgba(74, 222, 128, 0.3)' },
-                    default: { shadowColor: '#4ade80', shadowOffset: {width:0, height:4}, shadowOpacity: 0.3, shadowRadius: 8 }
-                  }) 
-                : {}}
             >
-                {isRecommended && (
-                    <View className="absolute -top-3 right-4 bg-green-500 px-3 py-1 rounded-full z-10 shadow-sm">
-                        <Text className="text-white text-xs font-bold">RECOMMENDED FOR YOU</Text>
+                <View className="flex-row items-center flex-1">
+                    <View className="w-12 h-12 rounded-2xl bg-white/5 items-center justify-center mr-4">
+                        <Ionicons name={option.icon as any} size={24} color={isSelected ? '#0df259' : 'rgba(255,255,255,0.7)'} />
                     </View>
-                )}
-
-                <View className="bg-white p-3 rounded-full mr-4 shadow-sm">
-                    <Ionicons name={option.icon as any} size={24} color={isRecommended ? '#166534' : '#333'} />
+                    <View className="flex-1">
+                        <Text className="text-lg font-bold text-white">
+                            {t(`challenge.phases.${option.key}.title`, option.title)}
+                        </Text>
+                        <Text className="text-sm text-white/50 mt-0.5">
+                            {t(`challenge.phases.${option.key}.desc`, option.desc)}
+                        </Text>
+                    </View>
                 </View>
-                <View className="flex-1">
-                    <Text className="text-lg font-bold text-gray-800">{option.title}</Text>
-                    <Text className="text-sm text-gray-600">{option.description}</Text>
-                </View>
-                <View className="bg-white px-3 py-1 rounded-lg">
-                    <Text className="font-bold text-gray-800">{option.days}d</Text>
+                <View className="bg-white/10 px-3 py-1.5 rounded-full ml-2">
+                    <Text className="font-semibold text-white/80 text-xs">{option.days}d</Text>
                 </View>
             </TouchableOpacity>
           );
         })}
+
+        {/* Featured Option */}
+        <View className="relative mt-2">
+            <View className="absolute -top-2.5 left-6 bg-[#0df259] px-3 py-0.5 rounded-full z-10 shadow-lg">
+                <Text className="text-[#0a140d] text-[10px] font-extrabold tracking-widest">{t('challenge.recommendedBadge', 'RECOMENDADO')}</Text>
+            </View>
+            <TouchableOpacity
+                className={`w-full mb-4 rounded-3xl p-5 border-[1.5px] flex-row items-center justify-between ${
+                    selectedDays === FEATURED_OPTION.days ? 'bg-[#0df259]/20 border-[#0df259]' : 'bg-[#0df259]/5 border-[#0df259]/30'
+                }`}
+                onPress={() => setSelectedDays(FEATURED_OPTION.days)}
+                disabled={loading}
+                style={{ shadowColor: '#0df259', shadowOffset: {width: 0, height: 0}, shadowOpacity: 0.2, shadowRadius: 15 }}
+            >
+                <View className="flex-row items-center flex-1">
+                    <View className="w-12 h-12 rounded-2xl bg-[#0df259]/20 items-center justify-center mr-4">
+                        <Ionicons name={FEATURED_OPTION.icon as any} size={24} color={selectedDays === FEATURED_OPTION.days ? "#0df259" : "rgba(13, 242, 89, 0.5)"} />
+                    </View>
+                    <View className="flex-1">
+                        <Text className="text-lg font-extrabold text-white">
+                            {t(`challenge.phases.${FEATURED_OPTION.key}.title`, FEATURED_OPTION.title)}
+                        </Text>
+                        <Text className="text-sm text-[#0df259]/80 font-medium mt-0.5">
+                            {t(`challenge.phases.${FEATURED_OPTION.key}.desc`, FEATURED_OPTION.desc)}
+                        </Text>
+                    </View>
+                </View>
+                <View className="bg-[#0df259]/20 border border-[#0df259]/30 px-3 py-1.5 rounded-full ml-2">
+                    <Text className="font-bold text-[#0df259] text-xs">{FEATURED_OPTION.days}d</Text>
+                </View>
+            </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {loading && (
-        <View className="absolute inset-0 bg-black/20 justify-center items-center">
-            <View className="bg-white p-6 rounded-xl shadow-xl">
-                <ActivityIndicator size="large" color="#000" />
-                <Text className="mt-4 font-semibold text-gray-700">Generating Plan...</Text>
-            </View>
-        </View>
-      )}
+      {/* Sticky Footer */}
+      <View className="absolute bottom-8 left-6 right-6">
+        <TouchableOpacity 
+            className={`w-full py-4 rounded-2xl flex-row items-center justify-center shadow-lg transition-transform ${selectedDays && !loading ? 'bg-[#0df259]' : 'bg-gray-600'}`}
+            onPress={handleSelectChallenge}
+            disabled={!selectedDays || loading}
+            style={selectedDays ? { shadowColor: '#0df259', shadowOffset: {width: 0, height: 8}, shadowOpacity: 0.3, shadowRadius: 20 } : {}}
+        >
+            {loading ? (
+                <ActivityIndicator color="#0a140d" />
+            ) : (
+                <>
+                    <Text className="text-[#0a140d] font-extrabold tracking-wider text-base mr-2">
+                        {t('challenge.continue', 'CONTINUAR')}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={20} color="#0a140d" />
+                </>
+            )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }

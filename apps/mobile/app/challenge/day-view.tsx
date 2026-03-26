@@ -48,7 +48,7 @@ export default function DayViewScreen() {
                 <TouchableOpacity onPress={() => router.back()} className="mr-4">
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
-                <Text className="text-white text-xl font-bold">Today's Mission</Text>
+                <Text className="text-white text-xl font-bold">Today&apos;s Mission</Text>
             </View>
 
             <ScrollView className="flex-1 px-6">

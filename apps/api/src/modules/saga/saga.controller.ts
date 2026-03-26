@@ -26,7 +26,9 @@ export class SagaController {
   ) {}
 
   @Get('path')
-  @ApiOperation({ summary: 'Get current user saga path (nodes, phase, current day)' })
+  @ApiOperation({
+    summary: 'Get current user saga path (nodes, phase, current day)',
+  })
   async getPathHandler(@Request() req: RequestWithUser) {
     const result = await this.getPath.execute({ userId: req.user.userId });
     if (result.isFailure) {
@@ -36,7 +38,9 @@ export class SagaController {
   }
 
   @Post('complete')
-  @ApiOperation({ summary: 'Complete current path day; awards XP and updates streak' })
+  @ApiOperation({
+    summary: 'Complete current path day; awards XP and updates streak',
+  })
   async completeHandler(@Request() req: RequestWithUser) {
     const result = await this.completeNode.execute({ userId: req.user.userId });
     if (result.isFailure) {

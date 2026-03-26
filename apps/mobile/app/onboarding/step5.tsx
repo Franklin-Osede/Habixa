@@ -21,7 +21,7 @@ const getFirstDayOfMonth = (month: number, year: number) => {
 
 export default function OnboardingStep5() {
   const router = useRouter();
-  const params = useLocalSearchParams<Record<string, string | undefined>>();
+  const params = useLocalSearchParams();
   const { t } = useTranslation();
   
   const today = useMemo(() => new Date(), []);
@@ -48,6 +48,7 @@ export default function OnboardingStep5() {
   const [goals, setGoals] = useState<{ id: string; text: string; start: Date; end: Date }[]>([]);
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [tempGoalText, setTempGoalText] = useState('');
+  const [selectedSuggestions, setSelectedSuggestions] = useState<string[]>([]);
 
   const handleDatePress = (date: Date) => {
       // Logic for range selection
@@ -69,15 +70,45 @@ export default function OnboardingStep5() {
       });
   };
 
-  const addGoal = (text: string = tempGoalText) => {
-    if (text.trim() && range.start) {
-        setGoals([...goals, {
-            id: Date.now().toString(),
-            text: text,
+  const toggleSuggestion = (suggestion: string) => {
+    setSelectedSuggestions((prev) => 
+      prev.includes(suggestion) 
+        ? prev.filter((s) => s !== suggestion)
+        : [...prev, suggestion]
+    );
+  };
+
+  const addGoal = () => {
+    if (!range.start) return;
+
+    const newGoals: { id: string; text: string; start: Date; end: Date }[] = [];
+    const timestamp = Date.now();
+
+    // Add custom text if present
+    if (tempGoalText.trim()) {
+        newGoals.push({
+            id: `${timestamp}-custom`,
+            text: tempGoalText.trim(),
             start: range.start,
-            end: range.end || range.start // Fallback to single day if end is null
-        }]);
+            end: range.end || range.start
+        });
+    }
+
+    // Add selected suggestions
+    selectedSuggestions.forEach((suggestion, index) => {
+        newGoals.push({
+            id: `${timestamp}-sugg-${index}`,
+            text: suggestion,
+            start: range.start!,
+            end: range.end || range.start!
+        });
+    });
+
+    if (newGoals.length > 0) {
+        setGoals([...goals, ...newGoals]);
+        // Reset state
         setTempGoalText('');
+        setSelectedSuggestions([]);
         setIsAddingGoal(false);
         setRange({ start: null, end: null });
     }
@@ -323,24 +354,40 @@ export default function OnboardingStep5() {
 
                     <Text style={styles.suggestionTitle}>Sugerencias:</Text>
                     <View style={styles.chipContainer}>
-                        {exampleGoals.map((ex) => (
-                            <TouchableOpacity 
-                                key={ex} 
-                                style={styles.chip}
-                                onPress={() => addGoal(ex)}
-                            >
-                                <Text style={styles.chipText}>{ex}</Text>
-                            </TouchableOpacity>
-                        ))}
+                        {exampleGoals.map((ex) => {
+                            const isSelected = selectedSuggestions.includes(ex);
+                            return (
+                                <TouchableOpacity 
+                                    key={ex} 
+                                    style={[
+                                        styles.chip,
+                                        isSelected && { backgroundColor: Colors.primary }
+                                    ]}
+                                    onPress={() => toggleSuggestion(ex)}
+                                >
+                                    <Text style={[
+                                        styles.chipText,
+                                        isSelected && { color: Colors.backgroundDark, fontWeight: 'bold' }
+                                    ]}>{ex}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
 
                     <View style={{marginTop: 24}}>
                          <TouchableOpacity 
-                            onPress={() => addGoal()} 
-                            style={[styles.modalConfirm, !tempGoalText.trim() && {opacity: 0.5}]}
-                            disabled={!tempGoalText.trim()}
+                            onPress={addGoal} 
+                            style={[
+                                styles.modalConfirm, 
+                                (!tempGoalText.trim() && selectedSuggestions.length === 0) && {opacity: 0.5}
+                            ]}
+                            disabled={!tempGoalText.trim() && selectedSuggestions.length === 0}
                         >
-                            <Text style={[styles.modalButtonText, { color: Colors.backgroundDark }]}>Añadir Hito</Text>
+                            <Text style={[styles.modalButtonText, { color: Colors.backgroundDark }]}>
+                                {selectedSuggestions.length > 0 
+                                  ? `Añadir ${selectedSuggestions.length + (tempGoalText.trim() ? 1 : 0)} Hitos` 
+                                  : 'Añadir Hito'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>

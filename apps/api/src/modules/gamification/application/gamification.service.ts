@@ -118,7 +118,9 @@ export class GamificationService {
   }> {
     const stats = await this.getUserStats(userId);
     const yesterday = GamificationService.getYesterday();
-    const last = stats.lastActivityDate ? new Date(stats.lastActivityDate) : null;
+    const last = stats.lastActivityDate
+      ? new Date(stats.lastActivityDate)
+      : null;
     const lastDay = last ? new Date(last) : null;
     if (lastDay) lastDay.setUTCHours(0, 0, 0, 0);
     const atRisk = !!last && lastDay!.getTime() < yesterday.getTime();
@@ -134,7 +136,9 @@ export class GamificationService {
     };
   }
 
-  async useStreakFreeze(userId: string): Promise<{ ok: boolean; message?: string }> {
+  async useStreakFreeze(
+    userId: string,
+  ): Promise<{ ok: boolean; message?: string }> {
     const status = await this.getStreakStatus(userId);
     if (!status.atRisk) return { ok: false, message: 'Streak is not at risk' };
     if (!status.canUseFreeze) return { ok: false, message: 'Not enough gems' };

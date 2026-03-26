@@ -39,9 +39,10 @@ export default function StepContract() {
     return () => clearTimeout(timer);
   }, [fadeAnim, slideAnim]);
 
-  const rawTag = params.selectedTag;
-  const selectedTagStr = Array.isArray(rawTag) ? rawTag[0] : rawTag;
-  const displayTag = selectedTagStr ? selectedTagStr.toUpperCase() : 'GENERAL FITNESS';
+  const rawTags = params.selectedTags;
+  const selectedTagsStr = Array.isArray(rawTags) ? rawTags[0] : rawTags;
+  const firstTag = selectedTagsStr ? selectedTagsStr.split(',')[0] : '';
+  const displayTag = firstTag ? firstTag.toUpperCase() : 'GENERAL FITNESS';
 
   // Calculate BMI and select projection
   const weight = params.weight ? Number(params.weight) : undefined;
@@ -57,47 +58,12 @@ export default function StepContract() {
 
   const bmi = calculateBMI(weight, height);
 
-  const getProjectionText = () => {
-      const tag = displayTag; // e.g. "LOSE WEIGHT", "BUILD MUSCLE"
-      
-      if (tag.includes('MUSCLE')) {
-          return t('onboarding.contract.projection.muscle', { bmi: bmi || '24.5', defaultValue: '...' });
-      }
-      if (tag.includes('WEIGHT') || tag.includes('FAT')) {
-           return t('onboarding.contract.projection.weight');
-      }
-      if (tag.includes('ENERGY')) {
-          return t('onboarding.contract.projection.energy');
-      }
-      if (tag.includes('MIND') || tag.includes('STRESS')) {
-          return t('onboarding.contract.projection.mindfulness');
-      }
-      return t('onboarding.contract.projection.default');
-  };
+
+
 
   // Helper to parse styled text from translation (simple replacement for <bold>/<highlight>)
-  const StyledText = ({ text }: { text: string }) => {
-      // Split by tags and render Text components
-      // This is a naive implementation. For robust HTML-like parsing in RN, consider a library or recursive split.
-      // Here we will just handle <bold> and <highlight> simple cases.
-      
-      // Regex to split by <tag>content</tag>
-      const parts = text.split(/(<(?:bold|highlight)>.*?<\/(?:bold|highlight)>)/g);
 
-      return (
-          <Text style={styles.projectionText}>
-              {parts.map((part, index) => {
-                  if (part.startsWith('<bold>')) {
-                      return <Text key={index} style={{fontWeight:'bold', color: '#fff'}}>{part.replace(/<\/?bold>/g, '')}</Text>;
-                  }
-                  if (part.startsWith('<highlight>')) {
-                      return <Text key={index} style={{fontWeight:'bold', color: Colors.primary}}>{part.replace(/<\/?highlight>/g, '')}</Text>;
-                  }
-                  return <Text key={index}>{part}</Text>;
-              })}
-          </Text>
-      );
-  };
+
 
   const handleContinue = () => {
     router.push({
@@ -109,8 +75,9 @@ export default function StepContract() {
     });
   };
 
-  const GlassCard = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-    <View style={styles.glassCard} className={className}>
+  /* GlassCard Component Update */
+  const GlassCard = ({ children, className, style }: { children: React.ReactNode, className?: string, style?: any }) => (
+    <View style={[styles.glassCard, style]} className={className}>
       {children}
     </View>
   );
@@ -239,9 +206,9 @@ export default function StepContract() {
                             </GlassCard>
                         </View>
 
-                        {/* AI Projection */}
+                        {/* Profile Summary (Replaces AI Projection) */}
                         <View style={styles.aiProjectionContainer}>
-                           <GlassCard>
+                           <GlassCard style={{ width: '100%' }}>
                                 <LinearGradient
                                     colors={['rgba(13, 242, 89, 0.05)', 'transparent']}
                                     style={StyleSheet.absoluteFill}
@@ -249,31 +216,48 @@ export default function StepContract() {
                                     end={{x: 1, y: 1}}
                                 />
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                                    <MaterialIcons name="stars" size={20} color={Colors.primary} />
-                                    <Text style={styles.aiLabel}>{t('onboarding.contract.projectionTitle', 'AI PROJECTION')}</Text>
+                                    <MaterialIcons name="person-outline" size={20} color={Colors.primary} />
+                                    <Text style={styles.aiLabel}>{t('onboarding.contract.profileSummary', 'PERFIL DE ESTRATEGIA')}</Text>
                                 </View>
                                 
-                                    <StyledText text={getProjectionText()} />
-
-                                <View style={styles.matchSection}>
-                                    <View style={styles.avatars}>
-                                        <View style={[styles.avatarRing, { zIndex: 3 }]}>
-                                             <View style={styles.avatarPlaceholder} />
-                                        </View>
-                                        <View style={[styles.avatarRing, { zIndex: 2, marginLeft: -10 }]}>
-                                            <View style={[styles.avatarPlaceholder, { backgroundColor: '#334155'}]} />
-                                        </View>
-                                        <View style={[styles.avatarRing, { zIndex: 1, marginLeft: -10 }]}>
-                                            <View style={[styles.avatarPlaceholder, { backgroundColor: '#1e293b', justifyContent:'center', alignItems: 'center'}]}>
-                                                <Text style={{color:'#fff', fontSize:8, fontWeight:'bold'}}>+12k</Text>
-                                            </View>
-                                        </View>
+                                <View style={styles.summaryGrid}>
+                                    {/* Level */}
+                                    <View style={styles.summaryItem}>
+                                        <Text style={styles.summaryLabel}>{t('onboarding.step2.experienceTitle', 'Nivel')}</Text>
+                                        <Text style={styles.summaryValue}>
+                                            {params.experienceLevel ? t(`onboarding.step2.experience.${params.experienceLevel}`, String(params.experienceLevel)) : '-'}
+                                        </Text>
                                     </View>
-                                    <View style={{ alignItems: 'flex-end' }}>
-                                        <Text style={styles.matchPercent}>89% {t('onboarding.contract.match', 'Match')}</Text>
-                                        <Text style={styles.matchLabel}>{t('onboarding.contract.historical', 'Historical data analysis')}</Text>
+
+                                    {/* Equipment */}
+                                    <View style={styles.summaryItem}>
+                                        <Text style={styles.summaryLabel}>{t('onboarding.step2.equipmentTitle', 'Equipamiento')}</Text>
+                                        <Text style={styles.summaryValue}>
+                                            {params.equipment 
+                                                ? String(params.equipment).split(',').map(eq => t(`onboarding.step2.equipment.${eq}`, eq)).join(', ')
+                                                : '-'
+                                            }
+                                        </Text>
+                                    </View>
+
+                                    {/* Habits/Commitment */}
+                                    <View style={[styles.summaryItem, { width: '100%', marginTop: 8 }]}>
+                                        <Text style={styles.summaryLabel}>{t('onboarding.step2.habitsTitle', 'Hábitos')}</Text>
+                                        <View style={{flexDirection:'row', flexWrap:'wrap', gap: 8, marginTop: 4}}>
+                                            {params.selectedHabits 
+                                                ? String(params.selectedHabits).split(',').map((habit, i) => (
+                                                    <View key={i} style={styles.summaryTag}>
+                                                        <Text style={styles.summaryTagText}>
+                                                            {t(`onboarding.habits.${habit}`, habit)}
+                                                        </Text>
+                                                    </View>
+                                                ))
+                                                : <Text style={styles.summaryValue}>-</Text>
+                                            }
+                                        </View>
                                     </View>
                                 </View>
+
                            </GlassCard>
                         </View>
 
@@ -542,6 +526,40 @@ const styles = StyleSheet.create({
       borderRadius: 2,
       alignSelf: 'center',
       marginTop: 24,
+  },
+  summaryGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 16,
+  },
+  summaryItem: {
+      width: '48%',
+      marginBottom: 12,
+  },
+  summaryLabel: {
+      color: 'rgba(255,255,255,0.5)',
+      fontSize: 10,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: 4,
+      fontWeight: 'bold',
+  },
+  summaryValue: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+      textTransform: 'capitalize',
+  },
+  summaryTag: {
+      backgroundColor: 'rgba(13, 242, 89, 0.1)',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+  },
+  summaryTagText: {
+      color: Colors.primary,
+      fontSize: 11,
+      fontWeight: '600',
   },
 });
 

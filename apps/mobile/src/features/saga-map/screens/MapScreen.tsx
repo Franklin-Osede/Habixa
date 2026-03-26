@@ -10,8 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import type { PathNode } from '../domain/path.types';
-import type { NodeCompletionResult } from '../domain/path.types';
+import type { PathNode , NodeCompletionResult } from '../domain/path.types';
 import { usePath } from '../application';
 import {
   PathHeader,

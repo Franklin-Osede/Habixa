@@ -71,7 +71,9 @@ describe('GetSagaPathUseCase', () => {
 
     expect(result.isSuccess).toBe(true);
     const state = result.getValue();
-    expect(state.nodes.every((n: PathNodeDto) => n.status === 'locked')).toBe(true);
+    expect(state.nodes.every((n: PathNodeDto) => n.status === 'locked')).toBe(
+      true,
+    );
   });
 
   it('returns all nodes completed when currentDayIndex exceeds last day', async () => {
@@ -88,7 +90,9 @@ describe('GetSagaPathUseCase', () => {
 
     expect(result.isSuccess).toBe(true);
     const state = result.getValue();
-    expect(state.nodes.every((n: PathNodeDto) => n.status === 'completed')).toBe(true);
+    expect(
+      state.nodes.every((n: PathNodeDto) => n.status === 'completed'),
+    ).toBe(true);
   });
 
   it('calls port with given userId', async () => {

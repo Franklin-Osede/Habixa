@@ -6,24 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/Colors';
-import apiClient from '../../src/services/api.client';
-
-/** Build profile payload from onboarding params for PUT /identity/profile */
-function buildProfilePayload(params: Record<string, string | undefined>) {
-  const age = params.age ? Number(params.age) : undefined;
-  const weight = params.weight ? Number(params.weight) : undefined;
-  const height = params.height ? Number(params.height) : undefined;
-  const goals = params.selectedTag ? [params.selectedTag] : [];
-  return {
-    age,
-    weight,
-    height,
-    goals,
-    measurementSystem: (params.unitSystem as 'metric' | 'imperial') || 'metric',
-    dietaryPreference: params.dietType,
-  };
-}
-
 export default function OnboardingStep6() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -33,15 +15,11 @@ export default function OnboardingStep6() {
   // Flujo: step5 -> step6 (aquí) -> step-contract (resumen) -> mapa. Sin redirect.
 
   const finishOnboarding = useCallback(async () => {
-    const payload = buildProfilePayload(params as unknown as Record<string, string | undefined>);
-    try {
-      await apiClient.put('/identity/profile', payload);
-    } catch {
-      // Ignore errors for now
-    }
+    // Redirigimos al registro y pasamos todos los datos del onboarding
+    // para procesarlos allí después de crear la cuenta
     router.replace({
-      pathname: '/onboarding/step-contract',
-      params: { ...params }
+      pathname: '/register',
+      params: { ...params, fromOnboarding: 'true' }
     });
   }, [params, router]);
 

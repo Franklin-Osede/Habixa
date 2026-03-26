@@ -45,6 +45,30 @@ export default function LoginScreen() {
     }
   };
 
+  const handleDevLogin = async () => {
+    setLoading(true);
+    try {
+      const devEmail = `dev-${Date.now()}@habixa.ai`;
+      await apiClient.post('/identity/register', { email: devEmail, password: 'password' });
+      const response = await apiClient.post('/auth/login', { email: devEmail, password: 'password' });
+      
+      const { accessToken } = response.data;
+      if (accessToken) {
+        if (Platform.OS === 'web') {
+          localStorage.setItem('user_token', accessToken);
+        } else {
+          await SecureStore.setItemAsync('user_token', accessToken);
+        }
+        router.replace('/(tabs)');
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Dev Login failed';
+      Alert.alert('Dev Error', msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background-dark">
       <StatusBar style="light" />
@@ -60,7 +84,7 @@ export default function LoginScreen() {
                 <MaterialIcons name="arrow-back-ios" size={24} color="#E0E0E0" />
               </TouchableOpacity>
               <Text className="text-lg font-bold text-[#E0E0E0]">{t('auth.signIn')}</Text>
-              <View className="w-11" /> {/* Spacer */}
+              <View className="w-11" />
             </View>
 
             {/* Brand Icon */}
@@ -137,6 +161,19 @@ export default function LoginScreen() {
                 {!loading && <MaterialIcons name="bolt" size={24} color="#102216" />}
               </TouchableOpacity>
 
+              {/* Dev Mode Button */}
+              <TouchableOpacity 
+                className={`h-14 bg-[#183422] rounded-xl flex-row items-center justify-center mt-2 gap-2 border border-[#0df259]/30 active:scale-95 transition-transform ${loading ? 'opacity-80' : ''}`} 
+                onPress={handleDevLogin}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                <Text className="text-[#0df259] text-lg font-bold">
+                  {loading ? '...' : 'Continuar Modo Dev'}
+                </Text>
+                {!loading && <MaterialIcons name="developer-mode" size={24} color="#0df259" />}
+              </TouchableOpacity>
+
             </View>
 
             {/* Social Divider */}
@@ -148,10 +185,10 @@ export default function LoginScreen() {
 
             {/* Social Icons */}
             <View className="flex-row justify-center gap-6 mb-10">
-              <TouchableOpacity className="w-14 h-14 rounded-full bg-white/5 border border-white/10 items-center justify-center active:bg-white/10">
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-white/5 border border-white/10 items-center justify-center active:bg-white/10" onPress={() => Alert.alert('Apple Sign In')}>
                 <FontAwesome name="apple" size={24} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity className="w-14 h-14 rounded-full bg-white/5 border border-white/10 items-center justify-center active:bg-white/10">
+              <TouchableOpacity className="w-14 h-14 rounded-full bg-white/5 border border-white/10 items-center justify-center active:bg-white/10" onPress={() => Alert.alert('Google Sign In')}>
                 <FontAwesome name="google" size={24} color="white" />
               </TouchableOpacity>
             </View>

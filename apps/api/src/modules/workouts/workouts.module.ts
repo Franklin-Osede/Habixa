@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { WorkoutsController } from './workouts.controller';
 import { LogWorkoutUseCase } from './application/log-workout.use-case';
