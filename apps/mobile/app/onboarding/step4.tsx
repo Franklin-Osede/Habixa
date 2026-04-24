@@ -137,7 +137,8 @@ export default function OnboardingStep4() {
   const getMealIcon = (index: number) => {
       if (index === 0) return 'wb-twilight';
       if (index === 1) return 'wb-sunny';
-      return 'nights-stay';
+      if (index === 2) return 'nights-stay';
+      return 'restaurant';
   };
   
 	const updateMealPlan = (day: string, text: string) => {
@@ -284,10 +285,11 @@ export default function OnboardingStep4() {
                                 
                                 {isExpanded && (
                                     <View style={styles.mealSlotsContainer}>
-                                        {Array.from({ length: 3 }).map((_, i) => { // Limiting to 3 main meals for UI sanity matching design
+                                        {Array.from({ length: mealCount }).map((_, i) => { 
                                             const mealLabel = i === 0 ? t('common.breakfast') 
                                                             : i === 1 ? t('common.lunch') 
-                                                            : t('common.dinner');
+                                                            : i === 2 ? t('common.dinner')
+                                                            : `${t('common.meal')} ${i + 1}`;
                                             
                                             return (
                                                 <View key={i} style={styles.mealSlot}>

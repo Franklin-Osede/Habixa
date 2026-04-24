@@ -45,18 +45,9 @@ export default function StepContract() {
   const displayTag = firstTag ? firstTag.toUpperCase() : 'GENERAL FITNESS';
 
   // Calculate BMI and select projection
-  const weight = params.weight ? Number(params.weight) : undefined;
-  const height = params.height ? Number(params.height) : undefined;
+  // Unused height/weight variables removed
   
-  const calculateBMI = (w?: number, h?: number) => {
-      if (!w || !h) return null;
-      // Assume metric (kg/cm) for simplicity or convert if passed unit system
-      // If height is in cm, convert to m
-      const hM = h > 3 ? h / 100 : h; 
-      return (w / (hM * hM)).toFixed(1);
-  };
-
-  const bmi = calculateBMI(weight, height);
+  // BMI calculation removed to fix unused variables warning
 
 
 
@@ -66,13 +57,7 @@ export default function StepContract() {
 
 
   const handleContinue = () => {
-    router.push({
-      pathname: '/challenge/selection',
-      params: { 
-        recommendedDuration: 30,
-        trackId: displayTag.includes('MUSCLE') ? 'MUSCLE_GAIN' : 'WEIGHT_LOSS'
-      }
-    });
+    router.push('/onboarding/building-plan');
   };
 
   /* GlassCard Component Update */

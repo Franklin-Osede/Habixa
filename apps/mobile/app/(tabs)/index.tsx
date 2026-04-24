@@ -7,16 +7,14 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { MapScreen } from '@/src/features/saga-map/screens/MapScreen';
-import { ChallengeDashboard } from '@/components/challenge/ChallengeDashboard';
+import { ConciergeDashboard } from '@/components/concierge/ConciergeDashboard';
 
 export default function HomeTab() {
   const router = useRouter();
 
   return (
     <View style={{ flex: 1 }}>
-      <MapScreen />
-      <ChallengeDashboard />
+      <ConciergeDashboard />
 
       {/* Custom Bottom Navigation */}
       <View

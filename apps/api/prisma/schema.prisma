@@ -28,18 +28,18 @@ model User {
   height          Float?
   age             Int?
   gender          String?
-  activityLevel   String? 
+  activityLevel   String?
   experienceLevel String? // Beginner, Intermediate, Advanced
   equipment       String? // Gym, Home, Bodyweight
 
-  goals           String[]
-  allergies       String[]
+  goals     String[]
+  allergies String[]
 
   // Gamification & Progress
-  level           Int      @default(1)
-  xp              Int      @default(0)
-  streakCurrent   Int      @default(0)
-  currentDayIndex Int      @default(1) // Determines Phase (1-60, etc.)
+  level           Int @default(1)
+  xp              Int @default(0)
+  streakCurrent   Int @default(0)
+  currentDayIndex Int @default(1) // Determines Phase (1-60, etc.)
 
   // Relations
   workouts      WorkoutLog[]
@@ -47,45 +47,53 @@ model User {
   plans         PlanDay[]
 
   // Fixed Relations
-  userStats     UserStats?
-  habits        Habit[]
-  dailyPlans    DailyPlan[]
-  knowledge     KnowledgeSnippet[]
-  
-  // Gamification Relations
-  progress      UserProgress[]
-  dailyTasks    DailyUserTask[]
+  userStats  UserStats?
+  habits     Habit[]
+  dailyPlans DailyPlan[]
+  knowledge  KnowledgeSnippet[]
 
-  password      String
+  // Gamification Relations
+  progress   UserProgress[]
+  dailyTasks DailyUserTask[]
+
+  // Lifestyle & Entitlements
+  lifestylePlans    LifestylePlan[]
+  planJobs          PlanJob[]
+  devices           UserDevice[]
+  entitlements      Entitlement[]
+  referralCodes     ReferralCode[]
+  referralsRedeemed ReferralRedemption[] @relation("InvitedUser")
+
+  password String
 }
 
 // --- WORKOUT ENGINE ---
 
 model WorkoutBlock {
-  id          String   @id @default(uuid())
-  code        String   @unique // "A01", "B07"
-  category    String   // "Low Impact", "CrossFit", "HIIT", "Strength", "Express"
+  id          String @id @default(uuid())
+  code        String @unique // "A01", "B07"
+  category    String // "Low Impact", "CrossFit", "HIIT", "Strength", "Express"
   title       String
   description String
   durationMin Int
-  
-  // JSON structure for exercises (Flexible legacy)
-  structure   Json 
-  
-  // Normalized Structure (The "Visual" Way)
-  items       WorkoutItem[]
 
-  workouts    PlanDay[]
+  // JSON structure for exercises (Flexible legacy)
+  structure Json
+
+  // Normalized Structure (The "Visual" Way)
+  items WorkoutItem[]
+
+  workouts PlanDay[]
 }
 
 model WorkoutLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
   workoutBlockId String
-  date      DateTime @default(now())
-  
+  date           DateTime @default(now())
+
   proofImageUri String?
   notes         String?
   xpEarned      Int
@@ -94,87 +102,89 @@ model WorkoutLog {
 // --- NUTRITION ENGINE ---
 
 model MealTemplate {
-  id          String   @id @default(uuid())
-  code        String   @unique // "TEMPLATE_A", "TEMPLATE_B"
-  goal        String   // "Fat Loss Aggressive", "Muscle Gain"
-  
+  id   String @id @default(uuid())
+  code String @unique // "TEMPLATE_A", "TEMPLATE_B"
+  goal String // "Fat Loss Aggressive", "Muscle Gain"
+
   // JSON defining the structure
   // Example: { breakfast: ["Protein", "Carb"], lunch: ["Protein", "Carb", "Veg"] }
-  structure   Json
-  
-  plans       PlanDay[]
+  structure Json
+
+  plans PlanDay[]
 }
 
 model Ingredient {
-  id          String   @id @default(uuid())
-  name        String   // "Chicken Breast"
-  category    String   // "Protein", "Carb", "Fat", "Veg"
+  id              String  @id @default(uuid())
+  name            String // "Chicken Breast"
+  category        String // "Protein", "Carb", "Fat", "Veg"
   caloriesPer100g Int
-  isVegan     Boolean  @default(false)
-  
+  isVegan         Boolean @default(false)
+
   // Relations
   partnerProducts PartnerProduct[]
-  recipes         Recipe[] @relation("RecipeIngredients")
+  recipes         Recipe[]         @relation("RecipeIngredients")
 }
 
 model Recipe {
-  id          String   @id @default(uuid())
-  title       String   // "Vegan Curry"
-  instructions String  // "1. Chop onions..."
-  calories    Int
-  protein     Int
-  carbs       Int
-  fats        Int
-  imageUrl    String?
-  
-  isVegan     Boolean  @default(false)
+  id           String  @id @default(uuid())
+  title        String // "Vegan Curry"
+  instructions String // "1. Chop onions..."
+  calories     Int
+  protein      Int
+  carbs        Int
+  fats         Int
+  imageUrl     String?
+
+  // OpenClaw Catalog Tags
+  prepTimeMin  Int     @default(15)
+  isVegan      Boolean @default(false)
   isGlutenFree Boolean @default(false)
 
   ingredients Ingredient[] @relation("RecipeIngredients")
 }
 
 model NutritionLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
-  date      DateTime @default(now())
-  mealType  String
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  date          DateTime @default(now())
+  mealType      String
   proofImageUri String?
-  isVerified Boolean @default(false)
+  isVerified    Boolean  @default(false)
 }
 
 // --- MINDSET & DAILY ---
 
 model Quote {
-  id          String   @id @default(uuid())
-  text        String
-  author      String
-  tags        String[] // ["Motivation", "Discipline"]
+  id     String   @id @default(uuid())
+  text   String
+  author String
+  tags   String[] // ["Motivation", "Discipline"]
 }
 
 // --- DAILY GENERATED PLAN ---
 
 model PlanDay {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
-  date      DateTime
-  dayIndex  Int      // 1-365
-  phase     Int      // 1, 2, 3, 4
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  date     DateTime
+  dayIndex Int // 1-365
+  phase    Int // 1, 2, 3, 4
+
   // Assigned Content
   workoutBlockId String?
   workoutBlock   WorkoutBlock? @relation(fields: [workoutBlockId], references: [id])
-  
+
   mealTemplateId String?
   mealTemplate   MealTemplate? @relation(fields: [mealTemplateId], references: [id])
-  
+
   // Generated Specifics (The specific exercises/ingredients chosen for this user today)
-  generatedWorkout Json? 
+  generatedWorkout Json?
   generatedMeals   Json?
-  
+
   isCompleted Boolean @default(false)
   isUnlocked  Boolean @default(false)
 }
@@ -182,12 +192,12 @@ model PlanDay {
 // --- PARTNERSHIPS ---
 
 model PartnerProduct {
-  id          String   @id @default(uuid())
-  brand       String   // "HSN"
-  name        String   // "Evowhey 2.0"
-  linkUrl     String
-  isActive    Boolean  @default(false)
-  
+  id       String  @id @default(uuid())
+  brand    String // "HSN"
+  name     String // "Evowhey 2.0"
+  linkUrl  String
+  isActive Boolean @default(false)
+
   ingredientId String?
   ingredient   Ingredient? @relation(fields: [ingredientId], references: [id])
 }
@@ -195,15 +205,15 @@ model PartnerProduct {
 // --- MISSING MODELS RESTORED ---
 
 model UserStats {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id])
-  xp              Int      @default(0)
-  level           Int      @default(1)
-  currentStreak   Int      @default(0)
-  longestStreak   Int      @default(0)
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id])
+  xp               Int       @default(0)
+  level            Int       @default(1)
+  currentStreak    Int       @default(0)
+  longestStreak    Int       @default(0)
   lastActivityDate DateTime? @default(now())
-  gems            Int      @default(0)  // Economía: comprar Streak Freeze, etc.
+  gems             Int       @default(0) // Economía: comprar Streak Freeze, etc.
 
   // Profile Data
   age               Int?
@@ -212,19 +222,19 @@ model UserStats {
   activityLevel     String?
   dietaryPreference String?
   goals             String[]
-  measurementSystem String?  // Metric/Imperial
+  measurementSystem String? // Metric/Imperial
   integrations      Json?
 }
 
 model Habit {
-  id          String   @id @default(uuid())
+  id          String     @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
   title       String
   description String?
-  frequency   String 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  frequency   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   logs        HabitLog[]
 }
 
@@ -237,22 +247,22 @@ model HabitLog {
 }
 
 model DailyPlan {
-    id        String   @id @default(uuid())
-    userId    String
-    user      User     @relation(fields: [userId], references: [id])
-    date      DateTime
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    items     PlanItem[]
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  date      DateTime
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     PlanItem[]
 }
 
 model PlanItem {
-    id          String   @id @default(uuid())
-    planId      String
-    dailyPlan   DailyPlan @relation(fields: [planId], references: [id])
-    title       String
-    description String?
-    isCompleted Boolean @default(false)
+  id          String    @id @default(uuid())
+  planId      String
+  dailyPlan   DailyPlan @relation(fields: [planId], references: [id])
+  title       String
+  description String?
+  isCompleted Boolean   @default(false)
 }
 
 model KnowledgeSnippet {
@@ -271,48 +281,53 @@ model KnowledgeSnippet {
 // --- EXPERT CONTENT (Your Knowledge) ---
 
 model Exercise {
-  id          String   @id @default(uuid())
-  name        String   @unique // "Squat"
-  description String?
-  videoUrl    String?  // URL to your specific visual/video
+  id           String  @id @default(uuid())
+  name         String  @unique // "Squat"
+  description  String?
+  videoUrl     String? // URL to your specific visual/video
   thumbnailUrl String?
-  
+
   // Your "Personal Trainer" Touch
-  expertCues  String?  // "Keep chest up, drive knees out"
-  
-  difficulty  String   // Beginner, Intermediate, Advanced
-  muscleGroup String   // Legs, Chest, Back
-  
+  expertCues String? // "Keep chest up, drive knees out"
+
+  difficulty  String // Beginner, Intermediate, Advanced
+  muscleGroup String // Legs, Chest, Back
+
+  // OpenClaw Catalog Tags
+  jointStress     String? // "Knee, Lower Back"
+  equipment       String? // "Barbell, Dumbbell, Bodyweight"
+  movementPattern String? // "Squat, Hinge, Push, Pull"
+
   // Relations
   workoutItems WorkoutItem[]
 }
 
 model Challenge {
-  id          String   @id @default(uuid())
-  title       String   // "30 Day Fat Loss"
-  description String
+  id           String @id @default(uuid())
+  title        String // "30 Day Fat Loss"
+  description  String
   durationDays Int
   rewardPoints Int
-  
+
   // "Unlocks" logic
   prerequisiteId String?
-  prerequisite   Challenge? @relation("Unlocks", fields: [prerequisiteId], references: [id])
+  prerequisite   Challenge?  @relation("Unlocks", fields: [prerequisiteId], references: [id])
   unlocks        Challenge[] @relation("Unlocks")
 
   // Content
-  tasks       DailyTaskDefinition[]
-  progress    UserProgress[]
+  tasks    DailyTaskDefinition[]
+  progress UserProgress[]
 }
 
 model DailyTaskDefinition {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   challengeId String
   challenge   Challenge @relation(fields: [challengeId], references: [id])
-  
-  dayIndex    Int      // Day 1, Day 2...
-  title       String   // "Leg Destruction"
-  type        String   // WORKOUT, MINDSET, NUTRITION
-  
+
+  dayIndex Int // Day 1, Day 2...
+  title    String // "Leg Destruction"
+  type     String // WORKOUT, MINDSET, NUTRITION
+
   // If it's a workout, link to blocks or logic
   workoutBlockId String?
 }
@@ -320,50 +335,147 @@ model DailyTaskDefinition {
 // --- USER JOURNEY (The Game) ---
 
 model UserProgress {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
   challengeId String
   challenge   Challenge @relation(fields: [challengeId], references: [id])
-  
-  status      String   // LOCKED, IN_PROGRESS, COMPLETED
-  startedAt   DateTime @default(now())
+
+  status      String // LOCKED, IN_PROGRESS, COMPLETED
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
-  
-  currentDay  Int      @default(1)
-  
+
+  currentDay Int @default(1)
+
   @@unique([userId, challengeId])
 }
 
 // The "Daily Generative Loop"
 model DailyUserTask {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  
-  date        DateTime @default(now())
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  date        DateTime  @default(now())
   title       String
-  isCompleted Boolean  @default(false)
+  isCompleted Boolean   @default(false)
   completedAt DateTime?
-  
+
   // Verify logic
-  xpAwarded   Int      @default(0)
+  xpAwarded Int @default(0)
 }
 
 model WorkoutItem {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   workoutBlockId String
   workoutBlock   WorkoutBlock @relation(fields: [workoutBlockId], references: [id])
-  
-  exerciseId     String
-  exercise       Exercise @relation(fields: [exerciseId], references: [id])
-  
-  sets           Int
-  reps           String
-  restSec        Int
-  orderIndex     Int
+
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+
+  sets       Int
+  reps       String
+  restSec    Int
+  orderIndex Int
 }
 
 // Link WorkoutItem back to WorkoutBlock (updating existing model)
 // Note: You need to update the WorkoutBlock model above to include `items WorkoutItem[]`
+
+// --- LIFESTYLE & ENTITLEMENTS ---
+
+model LifestylePlan {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  status    String // PENDING/RUNNING/READY/FAILED
+  startDate DateTime
+  source    String // OPENCLAW
+  version   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weeks PlanWeek[]
+  jobs  PlanJob[]
+}
+
+model PlanWeek {
+  id              String        @id @default(uuid())
+  lifestylePlanId String
+  lifestylePlan   LifestylePlan @relation(fields: [lifestylePlanId], references: [id])
+  weekIndex       Int
+  content         Json
+  createdAt       DateTime      @default(now())
+
+  @@unique([lifestylePlanId, weekIndex])
+}
+
+model PlanJob {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  lifestylePlanId String?
+  lifestylePlan   LifestylePlan? @relation(fields: [lifestylePlanId], references: [id])
+  status          String // PENDING/RUNNING/READY/FAILED
+  progress        Int            @default(0)
+  errorMessage    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Device {
+  id          String   @id @default(uuid())
+  deviceId    String   @unique
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  riskScore   Int      @default(0)
+
+  users UserDevice[]
+}
+
+model UserDevice {
+  id       String @id @default(uuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [deviceId])
+
+  @@unique([userId, deviceId])
+}
+
+model Entitlement {
+  id        String    @id @default(uuid())
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id])
+  deviceId  String?
+  type      String // FREE/TRIAL/PREMIUM
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([deviceId])
+}
+
+model ReferralCode {
+  id          String   @id @default(uuid())
+  ownerUserId String
+  user        User     @relation(fields: [ownerUserId], references: [id])
+  code        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  redemptions ReferralRedemption[]
+}
+
+model ReferralRedemption {
+  id            String       @id @default(uuid())
+  codeId        String
+  referralCode  ReferralCode @relation(fields: [codeId], references: [id])
+  invitedUserId String
+  invitedUser   User         @relation("InvitedUser", fields: [invitedUserId], references: [id])
+  status        String // PENDING/CONFIRMED/REJECTED
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  confirmedAt   DateTime?
+}

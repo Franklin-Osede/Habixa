@@ -22,7 +22,8 @@ export class GetActiveChallengeUseCase implements UseCase<
     const { userId } = request;
 
     try {
-      const activeChallenge = await this.challengeRepository.findActiveByUserId(userId);
+      const activeChallenge =
+        await this.challengeRepository.findActiveByUserId(userId);
 
       if (!activeChallenge) {
         return Result.fail('No active challenge found for this user.');

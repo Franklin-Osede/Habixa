@@ -44,7 +44,7 @@ export const ChallengeDashboard = () => {
             </View>
             <TouchableOpacity 
                 className="bg-[#0df259] px-4 py-2 rounded-lg"
-                onPress={() => router.push('/challenge/selection')}
+                onPress={() => router.push('/challenge/selection' as any)}
             >
                 <Text className="font-bold text-black">Start Now</Text>
             </TouchableOpacity>

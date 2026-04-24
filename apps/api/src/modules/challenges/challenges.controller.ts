@@ -70,7 +70,7 @@ export class ChallengesController {
         durationDays: challenge.durationDays,
         currentDay: challenge.currentDay,
         trackId: challenge.trackId,
-      }
+      },
     };
   }
 }
