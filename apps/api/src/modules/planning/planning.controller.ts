@@ -152,7 +152,9 @@ export class PlanningController {
     summary: "Get the user's current lifestyle plan state for today",
     description:
       'Returns a discriminated union: NOT_STARTED | GENERATING | FAILED | READY. ' +
-      'Frontends should branch on `status` and never assume a payload shape.',
+      'Frontends should branch on `status` and never assume a payload shape. ' +
+      'Use this endpoint for lightweight state checks (home screen header, polling). ' +
+      'For meal cards with full ingredient breakdowns, prefer GET lifestyle/today/detailed.',
   })
   @ApiResponse({
     status: 200,
@@ -178,7 +180,43 @@ export class PlanningController {
   async getLifestyleToday(@Req() req: any): Promise<LifestyleTodayStatusDto> {
     const userId = req.user?.id || req.user?.sub || req.user?.userId;
     if (!userId) throw new BadRequestException('User not authenticated');
+    return this.resolveLifestyleToday(userId);
+  }
 
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      "Get today's plan with hydrated recipes and ingredient quantities",
+    description:
+      'Same discriminated union as GET lifestyle/today, but for the READY ' +
+      'state every meal is hydrated with its full Recipe (title, instructions, ' +
+      'macros, image) and a typed ingredient list with grams + unit. ' +
+      'Recipes whose IDs no longer exist are returned with `recipe: null` ' +
+      'so the UI can flag the inconsistency without breaking the layout.',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Discriminated union. NOT_STARTED / GENERATING / FAILED variants ' +
+      'are identical to GET lifestyle/today. The READY variant differs in ' +
+      'that `day.nutrition.meals[]` contains a hydrated `recipe` object ' +
+      '(or null) instead of a bare `recipeId` string.',
+  })
+  @Get('lifestyle/today/detailed')
+  async getLifestyleTodayDetailed(@Req() req: any) {
+    const userId = req.user?.id || req.user?.sub || req.user?.userId;
+    if (!userId) throw new BadRequestException('User not authenticated');
+
+    const status = await this.resolveLifestyleToday(userId);
+    if (status.status !== PLAN_STATUS.READY) return status;
+
+    return { ...status, day: await this.hydrateDay(status.day) };
+  }
+
+  private async resolveLifestyleToday(
+    userId: string,
+  ): Promise<LifestyleTodayStatusDto> {
     const lifestylePlan = await this.prisma.lifestylePlan.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -266,6 +304,76 @@ export class PlanningController {
       schemaVersion: week.schemaVersion,
       day: day as unknown as Record<string, unknown>,
       completion: completedTasks as unknown as Array<Record<string, unknown>>,
+    };
+  }
+
+  /**
+   * Replace each `meal.recipeId` with a fully hydrated `meal.recipe` object
+   * (Recipe + ingredient quantities + Ingredient details).
+   * Missing recipes are surfaced as `recipe: null` rather than dropped.
+   */
+  private async hydrateDay(
+    day: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const nutrition = day.nutrition as
+      | { meals?: Array<{ recipeId?: string; [k: string]: unknown }> }
+      | undefined;
+    const meals = nutrition?.meals ?? [];
+
+    const recipeIds = Array.from(
+      new Set(meals.map((m) => m.recipeId).filter((id): id is string => !!id)),
+    );
+
+    const recipes = recipeIds.length
+      ? await this.prisma.recipe.findMany({
+          where: { id: { in: recipeIds } },
+          include: {
+            ingredients: { include: { ingredient: true } },
+          },
+        })
+      : [];
+
+    const recipeById = new Map(recipes.map((r) => [r.id, r]));
+
+    const hydratedMeals = meals.map((meal) => {
+      const recipe = meal.recipeId ? recipeById.get(meal.recipeId) : undefined;
+      const { recipeId: _omit, ...rest } = meal;
+      void _omit;
+      return {
+        ...rest,
+        recipe: recipe
+          ? {
+              id: recipe.id,
+              title: recipe.title,
+              instructions: recipe.instructions,
+              calories: recipe.calories,
+              protein: recipe.protein,
+              carbs: recipe.carbs,
+              fats: recipe.fats,
+              imageUrl: recipe.imageUrl,
+              prepTimeMin: recipe.prepTimeMin,
+              isVegan: recipe.isVegan,
+              isGlutenFree: recipe.isGlutenFree,
+              ingredients: recipe.ingredients.map((ri) => ({
+                quantityGrams: ri.quantityGrams,
+                unit: ri.unit,
+                notes: ri.notes,
+                ingredient: {
+                  id: ri.ingredient.id,
+                  name: ri.ingredient.name,
+                  category: ri.ingredient.category,
+                  caloriesPer100g: ri.ingredient.caloriesPer100g,
+                  isVegan: ri.ingredient.isVegan,
+                },
+              })),
+            }
+          : null,
+      };
+    });
+
+    return {
+      ...day,
+      nutrition: { ...(nutrition ?? {}), meals: hydratedMeals },
     };
   }
 

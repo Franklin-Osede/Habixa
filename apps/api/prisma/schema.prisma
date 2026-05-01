@@ -122,7 +122,7 @@ model Ingredient {
 
   // Relations
   partnerProducts PartnerProduct[]
-  recipes         Recipe[]         @relation("RecipeIngredients")
+  recipeUsages    RecipeIngredient[]
 }
 
 model Recipe {
@@ -140,7 +140,23 @@ model Recipe {
   isVegan      Boolean @default(false)
   isGlutenFree Boolean @default(false)
 
-  ingredients Ingredient[] @relation("RecipeIngredients")
+  ingredients RecipeIngredient[]
+}
+
+// Explicit join table: Recipe <-> Ingredient with cooking quantity + unit.
+// Replaces the previous implicit M2M to allow shopping-list aggregation
+// and per-ingredient nutritional accuracy.
+model RecipeIngredient {
+  recipeId      String
+  recipe        Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredientId  String
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  quantityGrams Float
+  unit          String     @default("g") // "g" | "ml" | "unit"
+  notes         String?
+
+  @@id([recipeId, ingredientId])
+  @@index([ingredientId])
 }
 
 model NutritionLog {
@@ -357,13 +373,21 @@ model DailyUserTask {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
-  date        DateTime  @default(now())
-  title       String
-  isCompleted Boolean   @default(false)
-  completedAt DateTime?
+  date         DateTime  @default(now())
+  title        String
+  activityId   String?
+  activityType String?
+  planWeekId   String?
+  planWeek     PlanWeek? @relation(fields: [planWeekId], references: [id])
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
 
   // Verify logic
   xpAwarded Int @default(0)
+
+  @@unique([userId, date, activityId])
+  @@index([userId, date])
+  @@index([planWeekId])
 }
 
 model WorkoutItem {
@@ -401,14 +425,21 @@ model LifestylePlan {
 }
 
 model PlanWeek {
-  id              String        @id @default(uuid())
-  lifestylePlanId String
-  lifestylePlan   LifestylePlan @relation(fields: [lifestylePlanId], references: [id])
-  weekIndex       Int
-  content         Json
-  createdAt       DateTime      @default(now())
+  id               String        @id @default(uuid())
+  lifestylePlanId  String
+  lifestylePlan    LifestylePlan @relation(fields: [lifestylePlanId], references: [id])
+  weekIndex        Int
+  content          Json
+  schemaVersion    String        @default("plan_week_v1")
+  validationScore  Int?
+  validationErrors Json?
+  profileHash      String?
+  createdAt        DateTime      @default(now())
+
+  dailyTasks DailyUserTask[]
 
   @@unique([lifestylePlanId, weekIndex])
+  @@index([profileHash])
 }
 
 model PlanJob {
@@ -474,6 +505,7 @@ model ReferralRedemption {
   referralCode  ReferralCode @relation(fields: [codeId], references: [id])
   invitedUserId String
   invitedUser   User         @relation("InvitedUser", fields: [invitedUserId], references: [id])
+  deviceId      String?      @unique
   status        String // PENDING/CONFIRMED/REJECTED
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt

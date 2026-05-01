@@ -146,11 +146,11 @@ async function main() {
       carbs: 10,
       fats: 15,
       ingredients: {
-        connect: [
-          { id: chicken.id },
-          { id: broccoli.id },
-          { id: oliveOil.id },
-          { id: rice.id },
+        create: [
+          { ingredientId: chicken.id, quantityGrams: 200, unit: 'g' },
+          { ingredientId: rice.id, quantityGrams: 60, unit: 'g' },
+          { ingredientId: broccoli.id, quantityGrams: 150, unit: 'g' },
+          { ingredientId: oliveOil.id, quantityGrams: 10, unit: 'ml' },
         ],
       },
     },
