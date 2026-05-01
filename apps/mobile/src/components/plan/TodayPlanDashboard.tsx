@@ -7,8 +7,27 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api.client';
+
+const MEAL_TYPE_LABELS: Record<string, string> = {
+  breakfast: 'Desayuno',
+  lunch: 'Almuerzo',
+  snack: 'Snack',
+  dinner: 'Cena',
+};
+
+type HydratedMeal = {
+  id: string;
+  mealType: string;
+  recipe: {
+    id: string;
+    title: string;
+    calories: number;
+    imageUrl: string | null;
+  } | null;
+};
 
 type LifestyleTodayResponse =
   | { status: 'NOT_STARTED' }
@@ -23,7 +42,11 @@ type LifestyleTodayResponse =
       date: string;
       source: string;
       schemaVersion: string;
-      day: any;
+      day: {
+        workout?: { id: string; title?: string };
+        nutrition?: { meals?: HydratedMeal[] };
+        habits?: Array<{ id: string; title?: string; target?: string }>;
+      };
       completion: Array<{
         activityId: string | null;
         activityType: string | null;
@@ -51,7 +74,7 @@ export function TodayPlanDashboard() {
       setLoading(true);
       setError('');
       const res = await api.get<LifestyleTodayResponse>(
-        '/planning/lifestyle/today',
+        '/planning/lifestyle/today/detailed',
       );
       setData(res.data);
     } catch (err) {
@@ -148,6 +171,7 @@ function ReadyState({
   data: Extract<LifestyleTodayResponse, { status: 'READY' }>;
   onRefresh: () => void;
 }) {
+  const router = useRouter();
   const { day, completion, planWeekId, date } = data;
   const meals = day?.nutrition?.meals ?? [];
   const habits = day?.habits ?? [];
@@ -228,33 +252,52 @@ function ReadyState({
               />
               <Text style={styles.cardTitle}>Nutrición</Text>
             </View>
-            {meals.map((meal: any, index: number) => (
-              <View key={meal.id ?? index} style={styles.mealItem}>
-                <Text style={styles.itemTitle}>
-                  {meal.mealType}: {meal.recipeId}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.completeBtnSmall,
-                    isCompleted(meal.id) && styles.completedBtn,
-                  ]}
-                  disabled={isCompleted(meal.id)}
-                  onPress={() =>
-                    markCompleted(
-                      meal.id ?? `meal_${index}`,
-                      'meal',
-                      meal.mealType,
-                    )
-                  }
-                >
-                  <Ionicons
-                    name="checkmark-outline"
-                    size={20}
-                    color={COLORS.bgDark}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
+            {meals.map((meal, index) => {
+              const mealLabel =
+                MEAL_TYPE_LABELS[meal.mealType] ?? meal.mealType;
+              const recipeTitle = meal.recipe?.title ?? 'Receta no disponible';
+              return (
+                <View key={meal.id ?? index} style={styles.mealItem}>
+                  <TouchableOpacity
+                    style={{ flex: 1 }}
+                    activeOpacity={0.7}
+                    disabled={!meal.recipe}
+                    onPress={() =>
+                      meal.recipe &&
+                      router.push(`/nutrition/recipe/${meal.recipe.id}`)
+                    }
+                  >
+                    <Text style={styles.mealLabel}>{mealLabel}</Text>
+                    <Text style={styles.itemTitle}>{recipeTitle}</Text>
+                    {meal.recipe ? (
+                      <Text style={styles.mealMeta}>
+                        {meal.recipe.calories} kcal · Ver ingredientes ›
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.completeBtnSmall,
+                      isCompleted(meal.id) && styles.completedBtn,
+                    ]}
+                    disabled={isCompleted(meal.id)}
+                    onPress={() =>
+                      markCompleted(
+                        meal.id ?? `meal_${index}`,
+                        'meal',
+                        meal.mealType,
+                      )
+                    }
+                  >
+                    <Ionicons
+                      name="checkmark-outline"
+                      size={20}
+                      color={COLORS.bgDark}
+                    />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -385,6 +428,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  mealLabel: {
+    fontSize: 11,
+    color: COLORS.brand,
+    letterSpacing: 1,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  mealMeta: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
   },
   completeBtnSmall: {
     backgroundColor: COLORS.brand,
