@@ -7,6 +7,11 @@ import { Job } from 'bullmq';
 import { PrismaService } from '../../../common/prisma.service';
 import { OPEN_CLAW_PORT, OpenClawPort } from './ports/openclaw.port';
 import { OpenClawRequestDto } from './openclaw/openclaw.dto';
+import { createFallbackWeekPlan } from './fallback-plan.factory';
+import { PLAN_WEEK_SCHEMA_VERSION, PlanWeekContent } from './plan-week.schema';
+import { PlanWeekValidatorService } from './plan-week-validator.service';
+import { TdeeService } from './tdee/tdee.service';
+import { mapUserToTdeeInput } from './tdee/user-tdee.mapper';
 
 @Processor('planning')
 export class PlanProcessor extends WorkerHost {
@@ -15,6 +20,8 @@ export class PlanProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(OPEN_CLAW_PORT) private readonly openClawClient: OpenClawPort,
+    private readonly planWeekValidator: PlanWeekValidatorService,
+    private readonly tdeeService: TdeeService,
   ) {
     super();
   }
@@ -38,6 +45,7 @@ export class PlanProcessor extends WorkerHost {
           jointStress: true,
           equipment: true,
           movementPattern: true,
+          difficulty: true,
         },
       });
       const recipes = await this.prisma.recipe.findMany({
@@ -52,8 +60,10 @@ export class PlanProcessor extends WorkerHost {
         },
       });
 
+      const tdee = this.tdeeService.calculate(mapUserToTdeeInput(user));
+
       const payload: OpenClawRequestDto = {
-        taskId: 'generate_weekly_plan',
+        taskId: 'generate_week_1_plan_v1',
         userId: user.id,
         context: {
           userProfile: {
@@ -66,6 +76,12 @@ export class PlanProcessor extends WorkerHost {
             mealsPerDay: 4,
             allergies: user.allergies || [],
             dietType: user.userStats?.dietaryPreference || 'Omnivore',
+            nutritionTargets: {
+              targetKcal: tdee.targetKcal,
+              proteinG: tdee.macros.proteinG,
+              carbsG: tdee.macros.carbsG,
+              fatG: tdee.macros.fatG,
+            },
           },
           availableCatalog: {
             exercises: exercises.map((ex) => ({
@@ -93,46 +109,57 @@ export class PlanProcessor extends WorkerHost {
 
       await this.updateJobStatus(jobId, 'RUNNING', 30);
 
-      let response;
+      let content: PlanWeekContent;
+      let validationScore = 100;
+      let validationErrors: string[] = [];
+
       if (useFallback) {
-        // Fallback heuristic for FREE users to save OpenClaw costs
-        response = {
-          plan: Array(7).fill({
-            day: 'Fallback Day',
-            info: 'Unlock PREMIUM for full AI generated routines.',
-          }),
-        };
+        content = createFallbackWeekPlan(exercises, recipes, {
+          targetKcal: tdee.targetKcal,
+        });
+        validationScore = 80;
+        validationErrors = ['Fallback used due to entitlement policy'];
       } else {
-        response = await this.openClawClient.generatePlan(payload);
+        const generated = await this.generateAndValidateWeek(payload, {
+          exercises,
+          recipes,
+          userProfile: {
+            equipment: user.equipment,
+            experienceLevel: user.experienceLevel,
+            allergies: user.allergies,
+            dietType: user.userStats?.dietaryPreference,
+          },
+          targetKcal: tdee.targetKcal,
+        });
+        content = generated.content;
+        validationScore = generated.validationScore;
+        validationErrors = generated.validationErrors;
       }
 
       await this.updateJobStatus(jobId, 'RUNNING', 70);
 
-      // Map response to weeks (assuming response.plan is array of days or similar)
-      const baseContent = Array.isArray(response.plan)
-        ? response.plan
-        : [response.plan];
-
-      // Save 26 weeks for complete 6-month support
-      const weeksData = [];
-      for (let i = 1; i <= 26; i++) {
-        // Segment 7 days per week if we have enough items, else repeat/mock
-        const startIndex = (i - 1) * 7;
-        const weekChunk = baseContent.slice(startIndex, startIndex + 7);
-
-        if (weekChunk.length === 0) break; // Don't duplicate if OpenClaw didn't generate enough days
-
-        weeksData.push({
-          lifestylePlanId,
-          weekIndex: i,
-          content: weekChunk as any,
-        });
-      }
-
       await this.prisma.$transaction([
-        this.prisma.planWeek.createMany({
-          data: weeksData,
-          skipDuplicates: true,
+        this.prisma.planWeek.upsert({
+          where: {
+            lifestylePlanId_weekIndex: {
+              lifestylePlanId,
+              weekIndex: 1,
+            },
+          },
+          create: {
+            lifestylePlanId,
+            weekIndex: 1,
+            content: content as any,
+            schemaVersion: PLAN_WEEK_SCHEMA_VERSION,
+            validationScore,
+            validationErrors: validationErrors as any,
+          },
+          update: {
+            content: content as any,
+            schemaVersion: PLAN_WEEK_SCHEMA_VERSION,
+            validationScore,
+            validationErrors: validationErrors as any,
+          },
         }),
         this.prisma.lifestylePlan.update({
           where: { id: lifestylePlanId },
@@ -162,5 +189,82 @@ export class PlanProcessor extends WorkerHost {
       where: { id },
       data: { status, progress },
     });
+  }
+
+  private async generateAndValidateWeek(
+    payload: OpenClawRequestDto,
+    context: {
+      exercises: Array<{
+        id: string;
+        equipment: string | null;
+        difficulty: string;
+        jointStress: string | null;
+      }>;
+      recipes: Array<{
+        id: string;
+        isVegan: boolean;
+        isGlutenFree: boolean;
+      }>;
+      userProfile: {
+        equipment: string | null;
+        experienceLevel: string | null;
+        allergies: string[];
+        dietType: string | null | undefined;
+      };
+      targetKcal: number;
+    },
+  ): Promise<{
+    content: PlanWeekContent;
+    validationScore: number;
+    validationErrors: string[];
+  }> {
+    let validationErrors: string[] = [];
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await this.openClawClient.generatePlan({
+          ...payload,
+          taskId:
+            attempt === 1
+              ? payload.taskId
+              : `${payload.taskId}_repair_validation_errors`,
+          context: {
+            ...payload.context,
+            validationErrors,
+          } as any,
+        });
+        const normalized = this.planWeekValidator.normalizeResponse(response);
+        const result = this.planWeekValidator.validate({
+          response: normalized,
+          exercises: context.exercises,
+          recipes: context.recipes,
+          userProfile: context.userProfile,
+        });
+
+        if (result.ok) {
+          return {
+            content: result.content,
+            validationScore: result.score,
+            validationErrors: result.errors,
+          };
+        }
+
+        validationErrors = result.errors;
+      } catch (error: any) {
+        validationErrors = [error.message || 'OpenClaw generation failed'];
+        break;
+      }
+    }
+
+    return {
+      content: createFallbackWeekPlan(context.exercises, context.recipes, {
+        targetKcal: context.targetKcal,
+      }),
+      validationScore: 70,
+      validationErrors: [
+        'Fallback used after OpenClaw validation failure',
+        ...validationErrors,
+      ],
+    };
   }
 }

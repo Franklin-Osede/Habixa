@@ -5,10 +5,18 @@ export class OpenClawUserProfileDto {
   equipment: string | null;
 }
 
+export class OpenClawNutritionTargetsDto {
+  targetKcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
 export class OpenClawUserPreferencesDto {
   mealsPerDay: number;
   allergies: string[];
   dietType: string | null;
+  nutritionTargets: OpenClawNutritionTargetsDto;
 }
 
 export class OpenClawCatalogExerciseDto {

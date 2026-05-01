@@ -11,6 +11,8 @@ import { OpenClawHttpClient } from './infrastructure/http/openclaw.client';
 import { BullModule } from '@nestjs/bullmq';
 import { PlanProcessor } from './application/plan.processor';
 import { ReferralsController } from './referrals.controller';
+import { PlanWeekValidatorService } from './application/plan-week-validator.service';
+import { TdeeService } from './application/tdee/tdee.service';
 
 @Module({
   imports: [
@@ -32,7 +34,9 @@ import { ReferralsController } from './referrals.controller';
       provide: OPEN_CLAW_PORT,
       useClass: OpenClawHttpClient,
     },
+    PlanWeekValidatorService,
     PlanProcessor,
+    TdeeService,
   ],
   exports: [
     PlanRepository,
