@@ -7,14 +7,14 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ConciergeDashboard } from '@/components/concierge/ConciergeDashboard';
+import { TodayPlanDashboard } from '@/src/components/plan/TodayPlanDashboard';
 
 export default function HomeTab() {
   const router = useRouter();
 
   return (
-    <View style={{ flex: 1 }}>
-      <ConciergeDashboard />
+    <View style={{ flex: 1, paddingBottom: 96, backgroundColor: '#15241a' }}>
+      <TodayPlanDashboard />
 
       {/* Custom Bottom Navigation */}
       <View

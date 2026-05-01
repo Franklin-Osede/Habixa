@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/common/prisma.service';
+import { configureApp } from './../src/setup/configure-app';
 
 describe('Authentication (e2e)', () => {
   let app: INestApplication;
@@ -14,6 +15,7 @@ describe('Authentication (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
@@ -29,7 +31,7 @@ describe('Authentication (e2e)', () => {
   it('should register a new user', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return request(app.getHttpServer())
-      .post('/identity/register')
+      .post('/v1/identity/register')
       .send({
         email: 'e2e@example.com',
         password: 'Password123!',
@@ -40,7 +42,7 @@ describe('Authentication (e2e)', () => {
   it('should login with created user', async () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const response = await request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({
         email: 'e2e@example.com',
         password: 'Password123!',
@@ -54,7 +56,7 @@ describe('Authentication (e2e)', () => {
   it('should fail login with wrong password', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return request(app.getHttpServer())
-      .post('/auth/login')
+      .post('/v1/auth/login')
       .send({
         email: 'e2e@example.com',
         password: 'WrongPassword!',

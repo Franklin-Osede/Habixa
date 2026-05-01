@@ -1,13 +1,13 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { deleteStoredItem, getStoredItem } from './storage';
 
-// Use localhost for iOS simulator, or specific IP for Android emulator/Physical device
-// Port 3005 as per backend configuration
+// Use localhost for iOS simulator, or specific IP for Android emulator/Physical device.
+// Port 3008 matches backend; `/v1` prefix is enforced globally by NestJS URI versioning.
 const DEV_API_URL = Platform.select({
-  ios: 'http://localhost:3000',
-  android: 'http://10.0.2.2:3000',
-  default: 'http://localhost:3000',
+  ios: 'http://localhost:3008/v1',
+  android: 'http://10.0.2.2:3008/v1',
+  default: 'http://localhost:3008/v1',
 });
 
 const apiClient = axios.create({
@@ -21,15 +21,7 @@ const apiClient = axios.create({
 // Interceptor to inject token
 apiClient.interceptors.request.use(
   async (config) => {
-    let token: string | null = null;
-    
-    if (Platform.OS === 'web') {
-      if (typeof localStorage !== 'undefined') {
-        token = localStorage.getItem('user_token');
-      }
-    } else {
-      token = await SecureStore.getItemAsync('user_token');
-    }
+    const token = await getStoredItem('user_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -46,13 +38,7 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Logic to logout user or refresh token could go here
-    if (Platform.OS === 'web') {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('user_token');
-      }
-    } else {
-      await SecureStore.deleteItemAsync('user_token');
-    }
+      await deleteStoredItem('user_token');
     }
     return Promise.reject(error);
   },

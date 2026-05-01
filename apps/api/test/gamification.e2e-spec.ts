@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 import { PrismaService } from '../src/common/prisma.service';
+import { configureApp } from '../src/setup/configure-app';
 
 describe('Gamification (e2e)', () => {
   let app: INestApplication;
@@ -15,6 +16,7 @@ describe('Gamification (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
     prisma = app.get(PrismaService);
   });
@@ -77,7 +79,7 @@ describe('Gamification (e2e)', () => {
     // 3. Complete Habit via API
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await request(app.getHttpServer())
-      .post(`/habits/${habit.id}/complete`)
+      .post(`/v1/habits/${habit.id}/complete`)
       .send({ userId: user.id, date: new Date().toISOString() })
       .expect(201);
 
