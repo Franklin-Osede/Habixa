@@ -41,7 +41,7 @@ const COLORS = {
   danger: '#ff4444',
 };
 
-export function TodayPlanDashboard({ onNoPlan }: { onNoPlan?: () => void }) {
+export function TodayPlanDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LifestyleTodayResponse | null>(null);
   const [error, setError] = useState('');
@@ -65,13 +65,6 @@ export function TodayPlanDashboard({ onNoPlan }: { onNoPlan?: () => void }) {
   useEffect(() => {
     void fetchTodayPlan();
   }, []);
-
-  // Notify parent when there is no plan yet (legacy ConciergeDashboard fallback)
-  useEffect(() => {
-    if (data?.status === 'NOT_STARTED') {
-      onNoPlan?.();
-    }
-  }, [data?.status, onNoPlan]);
 
   if (loading) return <CenteredSpinner />;
 
