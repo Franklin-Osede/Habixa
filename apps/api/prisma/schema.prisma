@@ -382,6 +382,14 @@ model DailyUserTask {
   isCompleted  Boolean   @default(false)
   completedAt  DateTime?
 
+  // Skip tracking — when isCompleted=false but the user explicitly opted
+  // out (vs simply forgetting), skipReason captures their reason and
+  // skipNotes optionally adds free text. Skipped activities are NOT
+  // counted as completions but DO NOT break the adherence streak.
+  skipReason String? // 'illness' | 'time' | 'mood' | 'travel' | 'injury' | 'other'
+  skipNotes  String?
+  skippedAt  DateTime?
+
   // Verify logic
   xpAwarded Int @default(0)
 
