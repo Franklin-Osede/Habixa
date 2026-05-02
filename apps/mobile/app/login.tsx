@@ -6,7 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../src/services/api.client';
-import * as SecureStore from 'expo-secure-store';
+
+import { setStoredItem } from '../src/services/storage';
 
 
 export default function LoginScreen() {
@@ -30,11 +31,7 @@ export default function LoginScreen() {
       
       const { accessToken } = response.data;
       if (accessToken) {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('user_token', accessToken);
-        } else {
-          await SecureStore.setItemAsync('user_token', accessToken);
-        }
+        await setStoredItem('user_token', accessToken);
         router.replace('/(tabs)');
       }
     } catch (error: any) {
@@ -54,11 +51,7 @@ export default function LoginScreen() {
       
       const { accessToken } = response.data;
       if (accessToken) {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('user_token', accessToken);
-        } else {
-          await SecureStore.setItemAsync('user_token', accessToken);
-        }
+        await setStoredItem('user_token', accessToken);
         router.replace('/(tabs)');
       }
     } catch (error: any) {

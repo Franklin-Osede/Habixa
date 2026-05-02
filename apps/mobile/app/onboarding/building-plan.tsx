@@ -5,10 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as SecureStore from 'expo-secure-store';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import api from '../../src/services/api.client';
+import { getStoredItem, setStoredItem } from '../../src/services/storage';
 
 export default function BuildingPlanScreen() {
   const router = useRouter();
@@ -37,10 +37,10 @@ export default function BuildingPlanScreen() {
 
     const generateAndPoll = async () => {
       try {
-        let deviceId = await SecureStore.getItemAsync('deviceId');
+        let deviceId = await getStoredItem('deviceId');
         if (!deviceId) {
           deviceId = uuidv4();
-          await SecureStore.setItemAsync('deviceId', deviceId);
+          await setStoredItem('deviceId', deviceId);
         }
 
         const generateRes = await api.post('/planning/lifestyle/generate', {}, {
@@ -82,7 +82,8 @@ export default function BuildingPlanScreen() {
           alert('Has superado el límite diario de generación. Inténtalo de nuevo mañana.');
           router.replace('/(tabs)' as any);
         } else {
-          alert('Ha ocurrido un error inesperado al generar tu plan.');
+          const errMsg = err.response?.data?.message || 'Error desconocido';
+          alert('Error: ' + JSON.stringify(errMsg));
           router.replace('/(tabs)' as any);
         }
       }

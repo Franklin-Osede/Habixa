@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { getStoredItem, setStoredItem } from '../src/services/storage';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -28,12 +28,7 @@ export default function WelcomeScreen() {
   useEffect(() => {
     const loadSavedLanguage = async () => {
       try {
-        let savedLang;
-        if (Platform.OS === 'web') {
-           savedLang = localStorage.getItem('user_language');
-        } else {
-           savedLang = await SecureStore.getItemAsync('user_language');
-        }
+        const savedLang = await getStoredItem('user_language');
         
         if (savedLang) {
           setSelectedLang(savedLang);
@@ -41,12 +36,7 @@ export default function WelcomeScreen() {
         }
 
         // Check for token to auto-login
-        let token;
-        if (Platform.OS === 'web') {
-          token = localStorage.getItem('user_token');
-        } else {
-          token = await SecureStore.getItemAsync('user_token');
-        }
+        const token = await getStoredItem('user_token');
 
         if (token) {
            router.replace('/(tabs)');
@@ -64,11 +54,7 @@ export default function WelcomeScreen() {
     await i18n.changeLanguage(langId);
     setShowLanguageDropdown(false);
     try {
-      if (Platform.OS === 'web') {
-        localStorage.setItem('user_language', langId);
-      } else {
-        await SecureStore.setItemAsync('user_language', langId);
-      }
+      await setStoredItem('user_language', langId);
     } catch (error) {
       console.warn('Error saving language:', error);
     }
@@ -89,7 +75,8 @@ export default function WelcomeScreen() {
       
       {/* Top Bar with Language Selector */}
       <View style={styles.topBar}>
-        <View /> {/* Spacer */}
+        {/* Spacer */}
+        <View />
         <View style={styles.languageContainer}>
           <TouchableOpacity 
             style={styles.langButton} 

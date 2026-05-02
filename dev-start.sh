@@ -1,8 +1,8 @@
 #!/bin/bash
 export PATH="$HOME/.nvm/versions/node/v22.16.0/bin:$PATH"
 # Define Ports
-API_PORT=3000
-WEB_PORT=4210
+API_PORT=3008
+WEB_PORT=4216
 
 echo "🚀 Starting Habixa (AgentsMinds)..."
 echo "Backend Port: $API_PORT"

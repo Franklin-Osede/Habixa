@@ -46,11 +46,21 @@ export class ReferralsController {
       throw new BadRequestException('Cannot redeem own code');
 
     // Anti-abuse: 1 redeem per device
+    const existingDeviceRedemption =
+      await this.prisma.referralRedemption.findUnique({
+        where: { deviceId },
+      });
+    if (existingDeviceRedemption) {
+      throw new BadRequestException('This device has already redeemed a code');
+    }
+
     const existingRedemption = await this.prisma.entitlement.findFirst({
       where: { deviceId, type: 'PREMIUM' },
     });
     if (existingRedemption) {
-      throw new BadRequestException('This device has already used a referral or premium');
+      throw new BadRequestException(
+        'This device has already used a referral or premium',
+      );
     }
     // This is simplified: in reality we check ReferralRedemption table
     const existingRef = await this.prisma.referralRedemption.findFirst({
@@ -63,6 +73,7 @@ export class ReferralsController {
       data: {
         codeId: referralCode.id,
         invitedUserId: body.userId,
+        deviceId,
         status: 'PENDING',
       },
     });

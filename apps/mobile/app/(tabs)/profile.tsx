@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -20,7 +21,15 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View className="flex-1 bg-black p-6 pt-20">
+    <View className="flex-1 bg-black p-6 pt-20 relative">
+      {/* Back Button */}
+      <TouchableOpacity 
+        className="absolute top-12 left-6 z-10 w-10 h-10 bg-gray-900 rounded-full items-center justify-center"
+        onPress={() => router.back()}
+      >
+        <IconSymbol size={20} name="chevron.left" color="white" />
+      </TouchableOpacity>
+
       {/* Header */}
       <View className="items-center mb-10">
         <View className="w-24 h-24 bg-gray-800 rounded-full items-center justify-center mb-4 border-2 border-green-500">

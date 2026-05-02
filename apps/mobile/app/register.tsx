@@ -7,7 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../src/services/api.client';
-import * as SecureStore from 'expo-secure-store';
+
+import { getStoredItem, setStoredItem } from '../src/services/storage';
 
 /** Build profile payload from onboarding params for PUT /identity/profile */
 function buildProfilePayload(params: Record<string, string | undefined>) {
@@ -56,11 +57,7 @@ export default function RegisterScreen() {
       const loginResponse = await apiClient.post('/auth/login', { email, password });
       const { accessToken } = loginResponse.data;
       if (accessToken) {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('user_token', accessToken);
-        } else {
-          await SecureStore.setItemAsync('user_token', accessToken);
-        }
+        await setStoredItem('user_token', accessToken);
       }
 
       // 3. If from onboarding, put profile data and redirect to contract
@@ -91,29 +88,16 @@ export default function RegisterScreen() {
       const loginResponse = await apiClient.post('/auth/login', { email: devEmail, password: 'password' });
       const { accessToken } = loginResponse.data;
       if (accessToken) {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('user_token', accessToken);
-        } else {
-          await SecureStore.setItemAsync('user_token', accessToken);
-        }
+        await setStoredItem('user_token', accessToken);
       }
       const isFromOnboarding = params.fromOnboarding === 'true';
       let cachedParams: any = null;
 
       if (isFromOnboarding) {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('dev_onboarding_cache', JSON.stringify(params));
-        } else {
-          await SecureStore.setItemAsync('dev_onboarding_cache', JSON.stringify(params));
-        }
+        await setStoredItem('dev_onboarding_cache', JSON.stringify(params));
         cachedParams = { ...params };
       } else {
-        let cacheStr = null;
-        if (Platform.OS === 'web') {
-          cacheStr = localStorage.getItem('dev_onboarding_cache');
-        } else {
-          cacheStr = await SecureStore.getItemAsync('dev_onboarding_cache');
-        }
+        const cacheStr = await getStoredItem('dev_onboarding_cache');
         if (cacheStr) {
           try { cachedParams = JSON.parse(cacheStr); } catch (e) {}
         }

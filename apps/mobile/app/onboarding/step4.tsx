@@ -24,8 +24,8 @@ export default function OnboardingStep4() {
 
   // Weekly Plan State
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const [weeklyPlan, setWeeklyPlan] = useState<Record<string, string>>({
-    monday: '', tuesday: '', wednesday: '', thursday: '', friday: '', saturday: '', sunday: ''
+  const [weeklyPlan, setWeeklyPlan] = useState<Record<string, Record<number, string>>>({
+    monday: {}, tuesday: {}, wednesday: {}, thursday: {}, friday: {}, saturday: {}, sunday: {}
   });
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
@@ -141,8 +141,22 @@ export default function OnboardingStep4() {
       return 'restaurant';
   };
   
-	const updateMealPlan = (day: string, text: string) => {
-		setWeeklyPlan(prev => ({ ...prev, [day]: text }));
+	const updateMealPlan = (day: string, mealIndex: number, text: string) => {
+		setWeeklyPlan(prev => ({
+			...prev,
+			[day]: { ...prev[day], [mealIndex]: text }
+		}));
+	};
+
+	const appendTagToMealPlan = (day: string, mealIndex: number, tagLabel: string) => {
+		setWeeklyPlan(prev => {
+			const currentText = prev[day]?.[mealIndex] || '';
+			const newText = currentText ? `${currentText}, ${tagLabel}` : tagLabel;
+			return {
+				...prev,
+				[day]: { ...prev[day], [mealIndex]: newText }
+			};
+		});
 	};
 
   return (
@@ -159,7 +173,7 @@ export default function OnboardingStep4() {
             
             {/* TopAppBar */}
             <View style={styles.topBar}>
-              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <TouchableOpacity testID="back-button" onPress={() => router.back()} style={styles.backButton}>
                 <MaterialIcons name="arrow-back-ios" size={20} color="#ffffff" />
               </TouchableOpacity>
               <View style={styles.progressContainer}>
@@ -187,6 +201,7 @@ export default function OnboardingStep4() {
                         return (
                             <TouchableOpacity
                                 key={diet.id}
+                                testID={`diet-option-${diet.id}`}
                                 onPress={() => setDietType(diet.id)}
                                 style={[styles.dietCardGrouping]}
                                 activeOpacity={0.8}
@@ -222,6 +237,7 @@ export default function OnboardingStep4() {
                         return (
                             <TouchableOpacity
                                 key={option.id}
+                                testID={`allergy-chip-${option.id}`}
                                 onPress={() => toggleAllergy(option.id)}
                                 style={[styles.chip, isSelected ? styles.chipSelected : styles.chipUnselected]}
                                 activeOpacity={0.8}
@@ -235,6 +251,7 @@ export default function OnboardingStep4() {
                        <View style={[styles.chip, styles.chipUnselected, { minWidth: 100, paddingHorizontal: 12 }]}>
                            <TextInput
                                 autoFocus
+                                testID="custom-allergy-input"
                                 style={[styles.chipText, styles.chipTextUnselected, { width: '100%', outlineStyle: 'none' } as any]}
                                 placeholder="Add..."
                                 placeholderTextColor="rgba(255,255,255,0.3)"
@@ -245,7 +262,7 @@ export default function OnboardingStep4() {
                            />
                        </View>
                     ) : (
-                        <TouchableOpacity onPress={() => setIsAddingAllergy(true)} style={[styles.chip, styles.chipUnselected, { borderStyle: 'dashed' }]}>
+                        <TouchableOpacity testID="add-custom-allergy-btn" onPress={() => setIsAddingAllergy(true)} style={[styles.chip, styles.chipUnselected, { borderStyle: 'dashed' }]}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                 <MaterialIcons name="add" size={16} color="rgba(255,255,255,0.6)" />
                                 <Text style={[styles.chipText, styles.chipTextUnselected]}>Add</Text>
@@ -267,6 +284,7 @@ export default function OnboardingStep4() {
                         return (
                             <View key={day} style={[styles.dayCard, isExpanded && styles.dayCardExpanded]}>
                                 <TouchableOpacity 
+                                    testID={`day-accordion-${day}`}
                                     onPress={() => setExpandedDay(isExpanded ? null : day)}
                                     style={styles.dayHeader}
                                 >
@@ -298,19 +316,17 @@ export default function OnboardingStep4() {
                                                         <MaterialIcons name={getMealIcon(i) as any} size={14} color={Colors.primary} />
                                                     </View>
                                                     <TextInput 
+                                                        testID={`meal-input-${day}-${i}`}
                                                         style={styles.neonInput}
                                                         placeholder={t('onboarding.step4.placeholder')}
                                                         placeholderTextColor="rgba(255,255,255,0.2)"
-                                                        // In reality we bind this to some sub-field of weeklyPlan[day], but for now simplistic binding
-                                                        onChangeText={(txt) => {
-                                                            // Append logic or complex object logic
-                                                            // For now simplistic: just keep upgrading the day string
-                                                        }}
+                                                        value={weeklyPlan[day]?.[i] || ''}
+                                                        onChangeText={(txt) => updateMealPlan(day, i, txt)}
                                                     />
                                                     <View style={styles.tagContainer}>
                                                         {getMealTags(i).map(tag => (
-                                                            <TouchableOpacity key={tag.id} style={styles.tag} onPress={() => {
-																// Logic to add tag to input
+                                                            <TouchableOpacity key={tag.id} testID={`meal-tag-${day}-${i}-${tag.id}`} style={styles.tag} onPress={() => {
+																appendTagToMealPlan(day, i, tag.label);
 															}}>
                                                                 <Text style={styles.tagText}>{tag.label}</Text>
                                                             </TouchableOpacity>
@@ -341,7 +357,7 @@ export default function OnboardingStep4() {
                 <Text style={styles.sectionTitle}>{t('onboarding.step4.mealsTitle')}</Text>
                 <View style={styles.segmentContainer}>
                     {[2, 3, 4, 5].map((num) => (
-                         <TouchableOpacity key={num} onPress={() => setMealCount(num)} style={[styles.segmentBtn, mealCount === num && styles.segmentBtnSelected]}>
+                         <TouchableOpacity key={num} testID={`meal-count-${num}`} onPress={() => setMealCount(num)} style={[styles.segmentBtn, mealCount === num && styles.segmentBtnSelected]}>
                             <Text style={[styles.segmentText, mealCount === num && styles.segmentTextSelected]}>{num === 5 ? '5+' : num}</Text>
                         </TouchableOpacity>
                     ))}
@@ -350,7 +366,7 @@ export default function OnboardingStep4() {
 
             {/* Next Button */}
             <View style={styles.sectionPadding}>
-                 <TouchableOpacity onPress={handleNext} style={styles.nextButton} activeOpacity={0.9}>
+                 <TouchableOpacity testID="next-button" onPress={handleNext} style={styles.nextButton} activeOpacity={0.9}>
                     <Text style={styles.nextButtonText}>{t('onboarding.step4.next')}</Text>
                     <MaterialIcons name="arrow-forward" size={24} color={Colors.backgroundDark} />
                 </TouchableOpacity>

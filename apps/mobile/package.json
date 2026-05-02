@@ -10,7 +10,8 @@
     "web": "expo start --web --port 4216",
     "web:dev": "CI=true expo start --web --port 4216",
     "web:clear": "CI= expo start --web --port 4216 --clear",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -52,6 +53,7 @@
     "uuid": "^14.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.50.1",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
     "@types/uuid": "^11.0.0",
