@@ -7,6 +7,7 @@ import { IdentityModule } from './modules/identity/identity.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { PlanningModule } from './modules/planning/planning.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
+import { MeModule } from './modules/me/me.module';
 import { HabitsModule } from './modules/habits/habits.module';
 import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 import { McpModule } from './modules/mcp/mcp.module';
@@ -34,6 +35,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ProfileModule,
     PlanningModule,
     RecipesModule,
+    MeModule,
     HabitsModule,
     KnowledgeModule,
     WorkoutsModule,
