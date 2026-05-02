@@ -6,10 +6,37 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api.client';
+
+const SKIP_REASONS: Array<{ id: string; label: string }> = [
+  { id: 'illness', label: 'Estoy enfermo' },
+  { id: 'time', label: 'No tengo tiempo hoy' },
+  { id: 'mood', label: 'No me siento con ánimo' },
+  { id: 'travel', label: 'Estoy de viaje' },
+  { id: 'injury', label: 'Lesión / molestia' },
+  { id: 'other', label: 'Otro' },
+];
+
+function promptSkipReason(
+  activityLabel: string,
+  onPick: (reason: string) => void,
+) {
+  Alert.alert(
+    `Saltar: ${activityLabel}`,
+    'Esto no rompe tu racha pero cuenta como no completado. ¿Por qué saltas?',
+    [
+      ...SKIP_REASONS.map((r) => ({
+        text: r.label,
+        onPress: () => onPick(r.id),
+      })),
+      { text: 'Cancelar', style: 'cancel' as const },
+    ],
+  );
+}
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: 'Desayuno',
@@ -200,6 +227,28 @@ function ReadyState({
     }
   };
 
+  const skipActivity = (
+    activityId: string,
+    type: string,
+    title: string,
+    label: string,
+  ) => {
+    promptSkipReason(label, async (reason) => {
+      try {
+        await api.post('/planning/lifestyle/activity/skip', {
+          activityId,
+          activityType: type,
+          title,
+          planWeekId,
+          reason,
+        });
+        onRefresh();
+      } catch (err) {
+        console.error('Error skipping activity', err);
+      }
+    });
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -219,23 +268,44 @@ function ReadyState({
             <Text style={styles.itemTitle}>
               {workout.title ?? 'Entrenamiento del día'}
             </Text>
-            <TouchableOpacity
-              style={[
-                styles.completeBtn,
-                isCompleted(workout.id) && styles.completedBtn,
-              ]}
-              onPress={() =>
-                router.push(
-                  `/workouts/run/${workout.id ?? 'workout_1'}` as never,
-                )
-              }
-            >
-              <Text style={styles.completeBtnText}>
-                {isCompleted(workout.id)
-                  ? 'Repetir entreno'
-                  : 'Comenzar entreno'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[
+                  styles.completeBtn,
+                  styles.completeBtnFlex,
+                  isCompleted(workout.id) && styles.completedBtn,
+                ]}
+                onPress={() =>
+                  router.push(
+                    `/workouts/run/${workout.id ?? 'workout_1'}` as never,
+                  )
+                }
+              >
+                <Text style={styles.completeBtnText}>
+                  {isCompleted(workout.id)
+                    ? 'Repetir entreno'
+                    : 'Comenzar entreno'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.skipBtn}
+                onPress={() =>
+                  skipActivity(
+                    workout.id ?? 'workout_1',
+                    'workout',
+                    workout.title ?? 'Entrenamiento',
+                    workout.title ?? 'Entrenamiento',
+                  )
+                }
+              >
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={18}
+                  color={COLORS.textMuted}
+                />
+                <Text style={styles.skipBtnText}>Saltar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -262,6 +332,14 @@ function ReadyState({
                     onPress={() =>
                       meal.recipe &&
                       router.push(`/nutrition/recipe/${meal.recipe.id}`)
+                    }
+                    onLongPress={() =>
+                      skipActivity(
+                        meal.id ?? `meal_${index}`,
+                        'meal',
+                        meal.mealType,
+                        `${mealLabel}: ${recipeTitle}`,
+                      )
                     }
                   >
                     <Text style={styles.mealLabel}>{mealLabel}</Text>
@@ -306,9 +384,22 @@ function ReadyState({
             </View>
             {habits.map((habit: any, index: number) => (
               <View key={habit.id ?? index} style={styles.mealItem}>
-                <Text style={styles.itemTitle}>
-                  {habit.title ?? habit.target}
-                </Text>
+                <TouchableOpacity
+                  style={{ flex: 1 }}
+                  activeOpacity={0.7}
+                  onLongPress={() =>
+                    skipActivity(
+                      habit.id ?? `habit_${index}`,
+                      'habit',
+                      habit.title ?? 'Hábito',
+                      habit.title ?? 'Hábito',
+                    )
+                  }
+                >
+                  <Text style={styles.itemTitle}>
+                    {habit.title ?? habit.target}
+                  </Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.completeBtnSmall,
@@ -414,6 +505,27 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  completeBtnFlex: { flex: 1 },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  skipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  skipBtnText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
   completeBtnText: {
     color: COLORS.bgDark,

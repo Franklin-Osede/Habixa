@@ -1,12 +1,47 @@
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import api from '@/src/services/api.client';
+
+type AdherenceResponse = {
+  windowDays: number;
+  windowStartDate: string;
+  windowEndDate: string;
+  streakDays: number;
+  totals: { completed: number; skipped: number; scheduled: number };
+  consistency: {
+    overallPct: number;
+    workoutPct: number;
+    nutritionPct: number;
+    habitsPct: number;
+  };
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [tapCount, setTapCount] = useState(0);
+  const [adherence, setAdherence] = useState<AdherenceResponse | null>(null);
+  const [loadingAdherence, setLoadingAdherence] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAdherence = async () => {
+      try {
+        const res = await api.get<AdherenceResponse>('/me/adherence?range=week');
+        if (!cancelled) setAdherence(res.data);
+      } catch (err) {
+        console.error('Failed to load adherence', err);
+      } finally {
+        if (!cancelled) setLoadingAdherence(false);
+      }
+    };
+    void fetchAdherence();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleVersionTap = () => {
     const newCount = tapCount + 1;
@@ -23,7 +58,7 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 bg-black p-6 pt-20 relative">
       {/* Back Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         className="absolute top-12 left-6 z-10 w-10 h-10 bg-gray-900 rounded-full items-center justify-center"
         onPress={() => router.back()}
       >
@@ -40,16 +75,43 @@ export default function ProfileScreen() {
       </View>
 
       {/* Stats Grid */}
-      <View className="flex-row justify-between mb-8">
-        <View className="bg-gray-900 p-4 rounded-xl flex-1 mr-2 items-center">
-            <Text className="text-2xl font-bold text-white">12</Text>
-            <Text className="text-gray-500 text-xs">Streak</Text>
-        </View>
-        <View className="bg-gray-900 p-4 rounded-xl flex-1 ml-2 items-center">
-            <Text className="text-2xl font-bold text-white">85%</Text>
-            <Text className="text-gray-500 text-xs">Consistency</Text>
-        </View>
+      <View className="flex-row justify-between mb-3">
+        <StatCard
+            value={
+              loadingAdherence
+                ? null
+                : (adherence?.streakDays ?? 0).toString()
+            }
+            label="Días seguidos"
+        />
+        <StatCard
+            value={
+              loadingAdherence
+                ? null
+                : `${adherence?.consistency.overallPct ?? 0}%`
+            }
+            label="Consistencia"
+        />
       </View>
+
+      {!loadingAdherence && adherence ? (
+        <View className="bg-gray-900 p-4 rounded-xl mb-8 flex-row justify-around">
+          <CategoryStat
+            label="Entreno"
+            pct={adherence.consistency.workoutPct}
+          />
+          <CategoryStat
+            label="Nutrición"
+            pct={adherence.consistency.nutritionPct}
+          />
+          <CategoryStat
+            label="Hábitos"
+            pct={adherence.consistency.habitsPct}
+          />
+        </View>
+      ) : (
+        <View className="mb-8" />
+      )}
 
       {/* Menu Options */}
       <View className="space-y-4">
@@ -61,7 +123,7 @@ export default function ProfileScreen() {
       {/* Hidden Developer Entrance */}
       <View className="flex-1 justify-end items-center mb-8 gap-4">
         {/* TEMPORARY: Visible Admin Button for Development */}
-        <TouchableOpacity 
+        <TouchableOpacity
             className="bg-red-900/50 px-6 py-3 rounded-full border border-red-500/50"
             onPress={() => {
                 console.log('Admin button pressed');
@@ -77,6 +139,28 @@ export default function ProfileScreen() {
       </View>
     </View>
   );
+}
+
+function StatCard({ value, label }: { value: string | null; label: string }) {
+    return (
+        <View className="bg-gray-900 p-4 rounded-xl flex-1 mx-1 items-center">
+            {value === null ? (
+                <ActivityIndicator color="#0df259" />
+            ) : (
+                <Text className="text-2xl font-bold text-white">{value}</Text>
+            )}
+            <Text className="text-gray-500 text-xs mt-1">{label}</Text>
+        </View>
+    );
+}
+
+function CategoryStat({ label, pct }: { label: string; pct: number }) {
+    return (
+        <View className="items-center">
+            <Text className="text-base font-bold text-white">{pct}%</Text>
+            <Text className="text-gray-500 text-xs mt-1">{label}</Text>
+        </View>
+    );
 }
 
 function MenuItem({ icon, title, isPro = false }: { icon: string; title: string; isPro?: boolean }) {
