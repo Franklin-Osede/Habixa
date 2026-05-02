@@ -625,6 +625,80 @@ export class PlanningController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Skip a planned activity (logs the reason, preserves the streak)',
+    description:
+      'Records that the user intentionally opted out of an activity. ' +
+      'Does NOT count as completed; DOES count as a "freeze day" for the ' +
+      'adherence streak. Reason must be one of: illness, time, mood, ' +
+      'travel, injury, other. Idempotent on (userId, date, activityId).',
+  })
+  @Post('lifestyle/activity/skip')
+  async skipActivity(
+    @Body()
+    body: {
+      date?: string;
+      activityId?: string;
+      activityType?: string;
+      title?: string;
+      planWeekId?: string;
+      reason?: string;
+      notes?: string;
+    },
+    @Req() req: any,
+  ) {
+    const userId = req.user?.id || req.user?.sub || req.user?.userId;
+    if (!userId) throw new BadRequestException('User not authenticated');
+    const allowed = ['illness', 'time', 'mood', 'travel', 'injury', 'other'];
+    if (!body.reason || !allowed.includes(body.reason)) {
+      throw new BadRequestException(
+        `reason is required and must be one of: ${allowed.join(', ')}`,
+      );
+    }
+
+    const dateStr = body.date || new Date().toISOString().split('T')[0];
+    const normalizedDate = new Date(dateStr);
+    normalizedDate.setUTCHours(0, 0, 0, 0);
+    const activityId = body.activityId || 'lifestyle_activity';
+    const title = body.title || 'Lifestyle Activity';
+
+    const task = await this.prisma.dailyUserTask.upsert({
+      where: {
+        userId_date_activityId: {
+          userId,
+          date: normalizedDate,
+          activityId,
+        },
+      },
+      create: {
+        userId,
+        title,
+        activityId,
+        activityType: body.activityType || 'day',
+        planWeekId: body.planWeekId,
+        isCompleted: false,
+        date: normalizedDate,
+        skipReason: body.reason,
+        skipNotes: body.notes ?? null,
+        skippedAt: new Date(),
+      },
+      update: {
+        title,
+        activityType: body.activityType || 'day',
+        planWeekId: body.planWeekId,
+        isCompleted: false,
+        completedAt: null,
+        skipReason: body.reason,
+        skipNotes: body.notes ?? null,
+        skippedAt: new Date(),
+      },
+    });
+
+    return { message: 'Activity skipped', task };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Post('lifestyle/activity')
   async completeActivity(
     @Body()
