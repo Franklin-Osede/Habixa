@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
@@ -39,6 +40,10 @@ import {
   PlanNotStartedDto,
   PlanReadyDto,
 } from './application/dto/lifestyle-today-status.dto';
+import {
+  ShoppingListAggregatorService,
+  ShoppingListMealSource,
+} from './application/shopping-list/shopping-list-aggregator.service';
 
 @ApiTags('Planning')
 @ApiExtraModels(
@@ -54,6 +59,7 @@ export class PlanningController {
     private readonly getDailyPlanUseCase: GetDailyPlanUseCase,
     private readonly generateLifestylePlanUseCase: GenerateLifestylePlanUseCase,
     private readonly prisma: PrismaService,
+    private readonly shoppingListAggregator: ShoppingListAggregatorService,
   ) {}
 
   @Post('generate')
@@ -374,6 +380,106 @@ export class PlanningController {
     return {
       ...day,
       nutrition: { ...(nutrition ?? {}), meals: hydratedMeals },
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Aggregated weekly shopping list grouped by ingredient',
+    description:
+      'Walks the user\'s current READY lifestyle plan, sums ingredient ' +
+      'quantities across all 7 days, and returns one entry per ' +
+      '(ingredient, unit) pair sorted in canonical shopping order ' +
+      '(Protein -> Carb -> Fat -> Veg -> Fruit -> Dairy -> Pantry). ' +
+      'Returns 404 when the user has no READY plan. Meals whose recipeId ' +
+      'no longer exists are silently skipped.',
+  })
+  @Get('lifestyle/shopping-list')
+  async getShoppingList(@Req() req: any) {
+    const userId = req.user?.id || req.user?.sub || req.user?.userId;
+    if (!userId) throw new BadRequestException('User not authenticated');
+
+    const lifestylePlan = await this.prisma.lifestylePlan.findFirst({
+      where: { userId, status: 'READY' },
+      orderBy: { createdAt: 'desc' },
+      include: { weeks: { orderBy: { weekIndex: 'asc' } } },
+    });
+
+    if (!lifestylePlan) {
+      throw new NotFoundException('No READY lifestyle plan');
+    }
+
+    const week =
+      lifestylePlan.weeks.find((w) => w.weekIndex === 1) ||
+      lifestylePlan.weeks[0];
+    if (!week) throw new NotFoundException('Plan week not available');
+
+    const parsedWeek = openClawWeekResponseSchema.safeParse(week.content);
+    if (!parsedWeek.success) {
+      throw new BadRequestException('Stored plan has invalid schema');
+    }
+
+    // Collect (recipeId, mealType, dayIndex) tuples across the whole week.
+    const tuples: Array<{
+      recipeId: string;
+      mealType: string;
+      dayIndex: number;
+    }> = [];
+    for (const day of parsedWeek.data.days) {
+      for (const meal of day.nutrition?.meals ?? []) {
+        if (meal.recipeId) {
+          tuples.push({
+            recipeId: meal.recipeId,
+            mealType: meal.mealType,
+            dayIndex: day.dayIndex,
+          });
+        }
+      }
+    }
+
+    const recipeIds = Array.from(new Set(tuples.map((t) => t.recipeId)));
+    const recipes = recipeIds.length
+      ? await this.prisma.recipe.findMany({
+          where: { id: { in: recipeIds } },
+          include: { ingredients: { include: { ingredient: true } } },
+        })
+      : [];
+    const recipeById = new Map(recipes.map((r) => [r.id, r]));
+
+    const sources: ShoppingListMealSource[] = tuples
+      .map((t) => {
+        const recipe = recipeById.get(t.recipeId);
+        if (!recipe) return null;
+        return {
+          recipeId: recipe.id,
+          recipeTitle: recipe.title,
+          mealType: t.mealType,
+          dayIndex: t.dayIndex,
+          ingredients: recipe.ingredients.map((ri) => ({
+            ingredient: {
+              id: ri.ingredient.id,
+              name: ri.ingredient.name,
+              category: ri.ingredient.category,
+              caloriesPer100g: ri.ingredient.caloriesPer100g,
+              isVegan: ri.ingredient.isVegan,
+            },
+            quantityGrams: ri.quantityGrams,
+            unit: ri.unit,
+          })),
+        };
+      })
+      .filter((x): x is ShoppingListMealSource => x !== null);
+
+    const items = this.shoppingListAggregator.aggregate(sources);
+
+    return {
+      range: 'week',
+      weekIndex: week.weekIndex,
+      lifestylePlanId: lifestylePlan.id,
+      planWeekId: week.id,
+      itemCount: items.length,
+      items,
     };
   }
 

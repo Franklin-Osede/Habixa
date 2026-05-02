@@ -13,6 +13,7 @@ import { PlanProcessor } from './application/plan.processor';
 import { ReferralsController } from './referrals.controller';
 import { PlanWeekValidatorService } from './application/plan-week-validator.service';
 import { TdeeService } from './application/tdee/tdee.service';
+import { ShoppingListAggregatorService } from './application/shopping-list/shopping-list-aggregator.service';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { TdeeService } from './application/tdee/tdee.service';
     PlanWeekValidatorService,
     PlanProcessor,
     TdeeService,
+    ShoppingListAggregatorService,
   ],
   exports: [
     PlanRepository,

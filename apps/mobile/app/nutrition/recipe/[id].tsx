@@ -173,10 +173,13 @@ export default function RecipeDetailScreen() {
           <Text style={styles.body}>{recipe.instructions}</Text>
         </Section>
 
-        <TouchableOpacity style={styles.shoppingBtn} disabled>
+        <TouchableOpacity
+          style={styles.shoppingBtn}
+          onPress={() => router.push('/nutrition/shopping-list')}
+        >
           <Ionicons name="cart-outline" size={20} color={COLORS.bgDark} />
           <Text style={styles.shoppingBtnText}>
-            Añadir a la lista de la compra (próximamente)
+            Ver lista de la compra de la semana
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -321,7 +324,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    opacity: 0.6,
   },
   shoppingBtnText: { color: COLORS.bgDark, fontWeight: 'bold', fontSize: 14 },
   errorText: {
