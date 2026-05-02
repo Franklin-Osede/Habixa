@@ -3,19 +3,22 @@
 > Living snapshot of where the codebase is and where to pick up next.
 > Update at the end of each working session.
 
-Last updated: **2026-05-02** (commit `09d79040`)
+Last updated: **2026-05-02** (commit `f6b86a53`)
 
 ---
 
 ## TL;DR — exact next step
 
-Phase 4 (workout session) is **shipped end-to-end** — guided session screen,
-state-machine reducer with 11 unit tests, hydrated workout exercises in
-the API. The next high-leverage move is **Phase 5: real adherence** so
-streak / consistency stop being placeholder values. Concrete first action:
-write a failing E2E test for `GET /v1/me/adherence?range=week` (real
-streak from `DailyUserTask` rows) and a failing test for the
-`POST /v1/planning/lifestyle/activity/skip` endpoint (skip with reason).
+Phase 5 (adherence + skip) is **shipped end-to-end**. Streak and per-category
+consistency on the profile screen are now real values from
+`/v1/me/adherence`; meals/workouts/habits in `<TodayPlanDashboard />` can
+be skipped with a reason that preserves the streak.
+
+The next high-leverage move is **Phase 6: AI Coach with tool use**. Concrete
+first action: scaffold a `CoachModule` with a `POST /v1/coach/message`
+endpoint backed by Anthropic SDK + tool-use, exposing read-only tools
+(`getTodayPlan`, `getAdherence`, `getStats`) so the agent can ground every
+reply in real user data instead of generic fitness advice.
 
 ---
 
@@ -28,8 +31,8 @@ streak from `DailyUserTask` rows) and a failing test for the
 | 2 | Deterministic kcal/macros (TdeeService) + RecipeIngredient schema + `/today/detailed` | done |
 | 3 | Recipe detail screen + weekly shopping list | done |
 | 3.5 | Real recipe catalog (50 AI-generated) + real exercise catalog (30 AI-generated) | done |
-| 4 | Workout session screen + state machine + workout exercise hydration | **done** |
-| 5 | Adherence (skip / streak from real `completion`) | not started |
+| 4 | Workout session screen + state machine + workout exercise hydration | done |
+| 5 | Adherence: streak / consistency / skip with reason | **done** |
 | 6 | AI Coach (chat with tool use) | not started |
 | 7 | Voice (TTS cues, morning agent) | not started |
 
@@ -38,6 +41,11 @@ streak from `DailyUserTask` rows) and a failing test for the
 ## What's shipped (recent commits)
 
 ```
+f6b86a53 feat(mobile): real adherence on profile screen + skip CTA on home
+a46ee2a7 feat(planning): expose POST /v1/planning/lifestyle/activity/skip
+8537d8b3 feat(me): expose GET /v1/me/adherence with deterministic streak + consistency
+69966079 feat(planning): add skipReason / skipNotes / skippedAt to DailyUserTask
+c9de3165 docs: refresh RESUME.md with Phase 4 completion + Phase 5 starting plan
 09d79040 feat(mobile): ship guided workout session screen + wire CTA
 07332dbe feat(planning): hydrate workout exercises in /today/detailed
 cf4885af feat(workout): implement WorkoutSessionMachine reducer + Jest setup
@@ -84,34 +92,34 @@ touched these surfaces):
 
 ---
 
-## Phase 5 — adherence (next)
+## Phase 6 — AI Coach with tool use (next)
 
-Goal: replace the hardcoded streak / consistency on the profile screen
-with real values derived from `DailyUserTask`. Add a "skip" pathway so
-the user can opt out of a meal or workout without it counting against
-adherence — but log the reason so we can learn from it.
+Goal: a chat surface where the user talks to Habixa and the model has
+*real, grounded* context (today's plan, adherence trend, recent skips,
+weight history). The differentiator is tool use — generic chatbots can
+quote fitness facts; this one can say "I see you skipped 3 leg sessions
+in a row, want me to swap Wednesday for an upper-body day?".
 
 Concrete steps:
 
-1. **Backend (TDD)**: `GET /v1/me/adherence?range=week`
-   - returns `{ streakDays, consistency: { workoutPct, nutritionPct, habitsPct }, recentSkips }`
-   - streak = consecutive days with at least one completed activity
-   - consistency = completed / scheduled per category
-   - 5–6 e2e cases covering edge bands (no plan, full streak, broken streak, skipped vs missed)
-2. **Backend (TDD)**: `POST /v1/planning/lifestyle/activity/skip`
-   - body: `{ activityId, activityType, reason: 'illness' | 'time' | 'mood' | 'other', notes? }`
-   - persists a `DailyUserTask` row with `isCompleted: false` plus a new
-     `skipReason` column (Prisma migration needed)
-   - test that skipped activity does *not* break the streak
-3. **Mobile**: replace the hardcoded `12` streak and `85%` consistency in
-   [profile.tsx](apps/mobile/app/(tabs)/profile.tsx#L42-L51) with values
-   from `/v1/me/adherence`.
-4. **Mobile**: add a "Saltar" affordance next to each meal/workout/habit
-   complete CTA in `<TodayPlanDashboard />` that opens a small reason
-   picker before posting.
-5. **Backend cron (optional, end of phase)**: weekly adjuster job that
-   nudges TDEE ±5% if reported weight diverges from projected by >5%
-   over 14 days.
+1. **Backend (TDD)**: `POST /v1/coach/message` with Anthropic SDK
+   - Body: `{ conversationId?, message }`
+   - Response: streamed assistant reply + any tool calls inspected
+   - Tools (start with read-only): `getTodayPlan`, `getAdherence`,
+     `getRecentSkips`, `getRecipe`, `getExercise`
+   - System prompt: dietitian + S&C coach voice, Spanish-first,
+     short responses, redirect on emotional/clinical signals.
+2. **Persistence**: `Conversation` and `Message` Prisma models
+   (id, userId, role, content, toolCalls, createdAt).
+3. **Backend tests**: stub the Anthropic client so unit tests are
+   deterministic; assert the right tool was called for prompts like
+   "what's my workout today" / "skipped lots, why" / "swap Wed".
+4. **Mobile**: new `/coach` route with chat list + input. Streamed
+   replies via SSE if the SDK exposes them.
+5. **Guardrails**: filter the system response if it strays into
+   medical advice; injected disclaimer for clinical questions.
+6. **Optional later**: write tools (`swapMeal`, `swapWorkout`,
+   `addNoteToToday`) once the read-only flow feels solid.
 
 ---
 
