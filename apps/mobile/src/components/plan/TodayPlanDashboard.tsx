@@ -224,18 +224,15 @@ function ReadyState({
                 styles.completeBtn,
                 isCompleted(workout.id) && styles.completedBtn,
               ]}
-              disabled={isCompleted(workout.id)}
               onPress={() =>
-                markCompleted(
-                  workout.id ?? 'workout_1',
-                  'workout',
-                  workout.title ?? 'Entrenamiento',
+                router.push(
+                  `/workouts/run/${workout.id ?? 'workout_1'}` as never,
                 )
               }
             >
               <Text style={styles.completeBtnText}>
                 {isCompleted(workout.id)
-                  ? 'Entreno Completado'
+                  ? 'Repetir entreno'
                   : 'Comenzar entreno'}
               </Text>
             </TouchableOpacity>
