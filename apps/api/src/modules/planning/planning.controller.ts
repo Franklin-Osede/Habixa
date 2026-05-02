@@ -314,9 +314,10 @@ export class PlanningController {
   }
 
   /**
-   * Replace each `meal.recipeId` with a fully hydrated `meal.recipe` object
-   * (Recipe + ingredient quantities + Ingredient details).
-   * Missing recipes are surfaced as `recipe: null` rather than dropped.
+   * Replace each `meal.recipeId` and each workout exercise's `exerciseId`
+   * with a fully hydrated `recipe` / `exercise` object (catalog row +
+   * relations). Missing rows surface as `null` so the UI flags the
+   * inconsistency without breaking layout.
    */
   private async hydrateDay(
     day: Record<string, unknown>,
@@ -324,8 +325,32 @@ export class PlanningController {
     const nutrition = day.nutrition as
       | { meals?: Array<{ recipeId?: string; [k: string]: unknown }> }
       | undefined;
-    const meals = nutrition?.meals ?? [];
+    const workout = day.workout as
+      | {
+          blocks?: Array<{
+            exercises?: Array<{ exerciseId?: string; [k: string]: unknown }>;
+            [k: string]: unknown;
+          }>;
+          [k: string]: unknown;
+        }
+      | undefined;
 
+    const hydratedNutrition = await this.hydrateNutrition(nutrition);
+    const hydratedWorkout = await this.hydrateWorkout(workout);
+
+    return {
+      ...day,
+      nutrition: hydratedNutrition,
+      workout: hydratedWorkout,
+    };
+  }
+
+  private async hydrateNutrition(
+    nutrition:
+      | { meals?: Array<{ recipeId?: string; [k: string]: unknown }> }
+      | undefined,
+  ): Promise<Record<string, unknown>> {
+    const meals = nutrition?.meals ?? [];
     const recipeIds = Array.from(
       new Set(meals.map((m) => m.recipeId).filter((id): id is string => !!id)),
     );
@@ -377,10 +402,69 @@ export class PlanningController {
       };
     });
 
-    return {
-      ...day,
-      nutrition: { ...(nutrition ?? {}), meals: hydratedMeals },
-    };
+    return { ...(nutrition ?? {}), meals: hydratedMeals };
+  }
+
+  private async hydrateWorkout(
+    workout:
+      | {
+          blocks?: Array<{
+            exercises?: Array<{ exerciseId?: string; [k: string]: unknown }>;
+            [k: string]: unknown;
+          }>;
+          [k: string]: unknown;
+        }
+      | undefined,
+  ): Promise<Record<string, unknown> | undefined> {
+    if (!workout) return workout;
+    const blocks = workout.blocks ?? [];
+
+    const exerciseIds = Array.from(
+      new Set(
+        blocks
+          .flatMap((b) => b.exercises ?? [])
+          .map((e) => e.exerciseId)
+          .filter((id): id is string => !!id),
+      ),
+    );
+
+    const exercises = exerciseIds.length
+      ? await this.prisma.exercise.findMany({
+          where: { id: { in: exerciseIds } },
+        })
+      : [];
+    const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+
+    const hydratedBlocks = blocks.map((block) => ({
+      ...block,
+      exercises: (block.exercises ?? []).map((item) => {
+        const exercise = item.exerciseId
+          ? exerciseById.get(item.exerciseId)
+          : undefined;
+        const { exerciseId: _omit, ...rest } = item;
+        void _omit;
+        return {
+          ...rest,
+          exercise: exercise
+            ? {
+                id: exercise.id,
+                name: exercise.name,
+                description: exercise.description,
+                expertCues: exercise.expertCues,
+                difficulty: exercise.difficulty,
+                muscleGroup: exercise.muscleGroup,
+                equipment: exercise.equipment,
+                movementPattern: exercise.movementPattern,
+                jointStress: exercise.jointStress,
+                videoUrl: exercise.videoUrl,
+                thumbnailUrl: exercise.thumbnailUrl,
+              }
+            : null,
+        };
+      }),
+    }));
+
+    return { ...workout, blocks: hydratedBlocks };
   }
 
   @UseGuards(AuthGuard('jwt'))

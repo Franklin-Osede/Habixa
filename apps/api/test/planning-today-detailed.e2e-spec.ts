@@ -18,6 +18,7 @@ describe('GET /v1/planning/lifestyle/today/detailed (e2e)', () => {
   let chickenId: string;
   let riceId: string;
   let recipeId: string;
+  let squatExerciseId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -76,6 +77,20 @@ describe('GET /v1/planning/lifestyle/today/detailed (e2e)', () => {
       },
     });
     recipeId = recipe.id;
+
+    const squat = await prisma.exercise.create({
+      data: {
+        name: 'Test Goblet Squat',
+        description: 'Squat down holding a dumbbell vertically against chest.',
+        expertCues: 'Keep elbows tucked, drive through heels.',
+        difficulty: 'Beginner',
+        muscleGroup: 'Legs',
+        equipment: 'Dumbbell',
+        movementPattern: 'Squat',
+        jointStress: 'Knee, Hip',
+      },
+    });
+    squatExerciseId = squat.id;
   });
 
   beforeEach(async () => {
@@ -90,6 +105,9 @@ describe('GET /v1/planning/lifestyle/today/detailed (e2e)', () => {
   afterAll(async () => {
     await cleanupUserData(prisma, TEST_EMAIL);
     await cleanupTestRecipe(prisma);
+    await prisma.exercise.deleteMany({
+      where: { name: 'Test Goblet Squat' },
+    });
     await app.close();
   });
 
@@ -226,6 +244,77 @@ describe('GET /v1/planning/lifestyle/today/detailed (e2e)', () => {
     expect(riceItem.ingredient.category).toBe('Carb');
   });
 
+  it('hydrates workout.blocks[].exercises[] with full Exercise data', async () => {
+    const plan = await prisma.lifestylePlan.create({
+      data: {
+        userId,
+        status: 'READY',
+        startDate: startOfTodayUtc(),
+        source: 'OPENCLAW',
+        version: '1',
+      },
+    });
+    await prisma.planWeek.create({
+      data: {
+        lifestylePlanId: plan.id,
+        weekIndex: 1,
+        content: buildValidWeekContent(recipeId, squatExerciseId) as never,
+        schemaVersion: 'plan_week_v1',
+        validationScore: 100,
+      },
+    });
+
+    const res = await request(app.getHttpServer() as never)
+      .get(ENDPOINT)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    const blocks = res.body.day.workout.blocks;
+    expect(Array.isArray(blocks)).toBe(true);
+    const exercise = blocks[0].exercises[0];
+    expect(exercise.sets).toBe(3);
+    expect(exercise.reps).toBe('10-12');
+    expect(exercise.restSec).toBe(75);
+    expect(exercise.exercise).toBeDefined();
+    expect(exercise.exercise.id).toBe(squatExerciseId);
+    expect(exercise.exercise.name).toBe('Test Goblet Squat');
+    expect(exercise.exercise.expertCues).toContain('Keep elbows tucked');
+    expect(exercise.exercise.muscleGroup).toBe('Legs');
+    expect(exercise.exercise.equipment).toBe('Dumbbell');
+    expect(exercise.exercise.difficulty).toBe('Beginner');
+  });
+
+  it('returns exercise: null when exerciseId does not exist', async () => {
+    const plan = await prisma.lifestylePlan.create({
+      data: {
+        userId,
+        status: 'READY',
+        startDate: startOfTodayUtc(),
+        source: 'OPENCLAW',
+        version: '1',
+      },
+    });
+    await prisma.planWeek.create({
+      data: {
+        lifestylePlanId: plan.id,
+        weekIndex: 1,
+        content: buildValidWeekContent(recipeId, 'unknown_exercise_id') as never,
+        schemaVersion: 'plan_week_v1',
+        validationScore: 100,
+      },
+    });
+
+    const res = await request(app.getHttpServer() as never)
+      .get(ENDPOINT)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    const exercise = res.body.day.workout.blocks[0].exercises[0];
+    expect(exercise.exercise).toBeNull();
+    // The drill (sets/reps/restSec) is preserved even when exercise is missing.
+    expect(exercise.sets).toBe(3);
+  });
+
   it('returns recipe: null for meals whose recipeId does not exist', async () => {
     const plan = await prisma.lifestylePlan.create({
       data: {
@@ -290,7 +379,10 @@ function startOfTodayUtc(): Date {
   return today;
 }
 
-function buildValidWeekContent(recipeId: string) {
+function buildValidWeekContent(
+  recipeId: string,
+  exerciseId: string = 'fallback_exercise',
+) {
   return {
     weekIndex: 1,
     schemaVersion: 'plan_week_v1',
@@ -310,7 +402,7 @@ function buildValidWeekContent(recipeId: string) {
               type: 'main',
               exercises: [
                 {
-                  exerciseId: 'fallback_exercise',
+                  exerciseId,
                   sets: 3,
                   reps: '10-12',
                   restSec: 75,
