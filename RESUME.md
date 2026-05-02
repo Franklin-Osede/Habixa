@@ -3,17 +3,19 @@
 > Living snapshot of where the codebase is and where to pick up next.
 > Update at the end of each working session.
 
-Last updated: **2026-05-02** (commit `d81c7df4`)
+Last updated: **2026-05-02** (commit `09d79040`)
 
 ---
 
 ## TL;DR — exact next step
 
-Open `apps/mobile/src/lib/workout/workout-session.machine.spec.ts` (already
-in your working tree, **uncommitted on purpose**). It is a complete RED test
-suite for a pure reducer that drives the workout-session screen. Implement
-`workout-session.machine.ts` next to it until 11/11 cases pass, then build
-the mobile screen.
+Phase 4 (workout session) is **shipped end-to-end** — guided session screen,
+state-machine reducer with 11 unit tests, hydrated workout exercises in
+the API. The next high-leverage move is **Phase 5: real adherence** so
+streak / consistency stop being placeholder values. Concrete first action:
+write a failing E2E test for `GET /v1/me/adherence?range=week` (real
+streak from `DailyUserTask` rows) and a failing test for the
+`POST /v1/planning/lifestyle/activity/skip` endpoint (skip with reason).
 
 ---
 
@@ -24,9 +26,9 @@ the mobile screen.
 | 0 | TDD infra (Jest, configureApp, env example) | done |
 | 1 | Plan lifecycle observable (NOT_STARTED / GENERATING / FAILED / READY) under `/v1` | done |
 | 2 | Deterministic kcal/macros (TdeeService) + RecipeIngredient schema + `/today/detailed` | done |
-| 3 | Recipe detail screen + weekly shopping list (aggregator + screen) | done |
+| 3 | Recipe detail screen + weekly shopping list | done |
 | 3.5 | Real recipe catalog (50 AI-generated) + real exercise catalog (30 AI-generated) | done |
-| 4 | Workout session screen + state machine | **in progress** |
+| 4 | Workout session screen + state machine + workout exercise hydration | **done** |
 | 5 | Adherence (skip / streak from real `completion`) | not started |
 | 6 | AI Coach (chat with tool use) | not started |
 | 7 | Voice (TTS cues, morning agent) | not started |
@@ -36,6 +38,14 @@ the mobile screen.
 ## What's shipped (recent commits)
 
 ```
+09d79040 feat(mobile): ship guided workout session screen + wire CTA
+07332dbe feat(planning): hydrate workout exercises in /today/detailed
+cf4885af feat(workout): implement WorkoutSessionMachine reducer + Jest setup
+2ceafe54 chore: persist outstanding work-in-progress across mobile and tooling
+ca186841 chore(workout): scaffold WorkoutSessionMachine spec for Phase 4
+14560231 feat(mobile): add cross-platform secure storage utility
+6b43d2dd feat(planning): add Zod schema + validator service for OpenClaw week responses
+26b7d0f5 docs: add RESUME.md snapshot of where the codebase stands
 d81c7df4 feat(seed): generate 30 exercises with OpenAI structured outputs
 407cfa8f feat(seed): generate 50 recipes with OpenAI structured outputs
 3b9756ff feat(planning): aggregate weekly shopping list from RecipeIngredient
@@ -46,74 +56,72 @@ b971fd13 chore(mobile): remove dead ConciergeDashboard placeholder
 40c98eae feat(planning): replace binary plan status with typed discriminated union under /v1
 ```
 
-## Test state (excluding pre-existing flakes)
+## Test state
 
-API unit + e2e green except 4 pre-existing failures (unrelated to current work):
+API: 26 e2e green + dozens of unit specs green. Mobile: 11 unit tests green
+on the workout machine. Pre-existing failures unchanged (we have not
+touched these surfaces):
 
 - `daily-plan.entity.spec.ts` — `addItem` 5-cap rule returns false on 6th
 - `register-user.use-case.spec.ts` — `MockUserRepository` missing `findProfileForMe`
 - `admin.{controller,service}.spec.ts` — providers misconfigured in test module
 - `gamification.e2e-spec.ts` — `currentStreak` stays at 0 after habit completion
 
-Total green: **82 tests** across 11 suites that we own.
+---
+
+## End-to-end user flow that now works
+
+1. Open app → home renders today's plan with Spanish locale date and meal
+   cards showing real recipe titles + kcal.
+2. Tap any meal → `/nutrition/recipe/[id]` shows photo placeholder, prep
+   time, macros, ingredient list with grams, instructions.
+3. Tap "Ver lista de la compra" on a recipe → `/nutrition/shopping-list`
+   aggregates the whole week into category-grouped checklist.
+4. Tap "Comenzar entreno" on home → `/workouts/run/[id]` opens guided
+   session: idle preview → exercising → resting (countdown auto-advances
+   or skip) → next set → next exercise → completed (auto-marks the day's
+   workout activity).
 
 ---
 
-## In-progress work — Phase 4 (workout session)
+## Phase 5 — adherence (next)
 
-### Done in this phase
+Goal: replace the hardcoded streak / consistency on the profile screen
+with real values derived from `DailyUserTask`. Add a "skip" pathway so
+the user can opt out of a meal or workout without it counting against
+adherence — but log the reason so we can learn from it.
 
-- 30 exercises seeded (`apps/api/scripts/seed-exercises-ai.ts`, run with
-  `pnpm tsx scripts/seed-exercises-ai.ts` from `apps/api/`).
-- AI seed schema + 10 passing unit tests
-  ([exercise-seed.schema.ts](apps/api/src/modules/planning/application/exercise-seed/exercise-seed.schema.ts)).
+Concrete steps:
 
-### Sitting in working tree (intentionally uncommitted)
-
-- [`apps/mobile/src/lib/workout/workout-session.machine.spec.ts`](apps/mobile/src/lib/workout/workout-session.machine.spec.ts)
-  — RED tests for a pure reducer:
-  - `IDLE` + `START` → `exercising`
-  - `exercising` + `COMPLETE_SET` → `resting` (with restSec from current exercise)
-  - `resting` + `TICK` → decrement, clamp to 0, auto-advance when 0
-  - `resting` + `SKIP_REST` → next set immediately
-  - last set of last exercise → `completed`
-  - any non-terminal state + `ABORT` → `aborted`
-  - `ABORT` is a no-op once `completed`
-
-### What still needs to ship (in order)
-
-1. **Add Jest to mobile.** No runner is configured there yet. Minimal:
-   `pnpm add -D jest ts-jest @types/jest`, then a `jest.config.js` with
-   `testEnvironment: 'node'` (no jsdom needed — the machine has no React).
-2. **Implement `workout-session.machine.ts`** until the 11 spec cases pass.
-   Pure reducer, immutable transitions, no I/O.
-3. **Hydrate workout exercises in `/v1/planning/lifestyle/today/detailed`**
-   (mirror the recipe hydration in [planning.controller.ts](apps/api/src/modules/planning/planning.controller.ts):
-   each `block.exercises[]` should include `name`, `description`,
-   `expertCues`, `difficulty`, `equipment` from the Exercise table — leave
-   `recipe: null` style fallback if exerciseId is unknown).
-4. **Build `apps/mobile/app/workouts/run/[id].tsx`** consuming the machine:
-   header (current exercise X of N), card with name + cues, set counter,
-   rest timer with progress ring, "Done with set" CTA, "Skip rest" CTA,
-   summary screen on `completed`. Use the same theme tokens as
-   [TodayPlanDashboard.tsx](apps/mobile/src/components/plan/TodayPlanDashboard.tsx).
-5. **Wire the "Comenzar entreno" button** in
-   [TodayPlanDashboard.tsx](apps/mobile/src/components/plan/TodayPlanDashboard.tsx)
-   to `router.push('/workouts/run/' + workout.id)` instead of the current
-   inline `markCompleted` call. The session screen should call
-   `markCompleted` on the `completed` state.
+1. **Backend (TDD)**: `GET /v1/me/adherence?range=week`
+   - returns `{ streakDays, consistency: { workoutPct, nutritionPct, habitsPct }, recentSkips }`
+   - streak = consecutive days with at least one completed activity
+   - consistency = completed / scheduled per category
+   - 5–6 e2e cases covering edge bands (no plan, full streak, broken streak, skipped vs missed)
+2. **Backend (TDD)**: `POST /v1/planning/lifestyle/activity/skip`
+   - body: `{ activityId, activityType, reason: 'illness' | 'time' | 'mood' | 'other', notes? }`
+   - persists a `DailyUserTask` row with `isCompleted: false` plus a new
+     `skipReason` column (Prisma migration needed)
+   - test that skipped activity does *not* break the streak
+3. **Mobile**: replace the hardcoded `12` streak and `85%` consistency in
+   [profile.tsx](apps/mobile/app/(tabs)/profile.tsx#L42-L51) with values
+   from `/v1/me/adherence`.
+4. **Mobile**: add a "Saltar" affordance next to each meal/workout/habit
+   complete CTA in `<TodayPlanDashboard />` that opens a small reason
+   picker before posting.
+5. **Backend cron (optional, end of phase)**: weekly adjuster job that
+   nudges TDEE ±5% if reported weight diverges from projected by >5%
+   over 14 days.
 
 ---
 
 ## Open security items
 
-The OpenAI key pasted in chat earlier is in `apps/api/.env` and was used
-by the recipe + exercise seeds. **Rotate it once this Phase 4 work lands**
-at https://platform.openai.com/api-keys — replace in `.env`, no other
-change required.
-
-The Supabase `sb_secret_*` pasted earlier in the same chat should also be
-rotated if not already done.
+- The OpenAI key pasted in chat earlier is in `apps/api/.env`. **Rotate it**
+  at https://platform.openai.com/api-keys before this branch goes anywhere
+  near a remote.
+- The Supabase `sb_secret_*` pasted earlier in the same chat should also
+  be rotated if not already done.
 
 ---
 
@@ -124,9 +132,9 @@ rotated if not already done.
 cd apps/api
 
 # bring up local stack (postgres on 5436, redis on 6380)
-# (use whatever script the user has — dev-start.sh in repo root)
+docker start habixa_postgres habixa_redis
 
-# run unit tests
+# run unit tests (note: 4 pre-existing suites still fail, see above)
 pnpm jest
 
 # run e2e tests (sequential, with forceExit for BullMQ leaks)
@@ -141,6 +149,24 @@ pnpm prisma migrate deploy
 # inspect catalogs
 pnpm tsx scripts/diagnose-recipes.ts
 pnpm tsx scripts/diagnose-plans.ts
+
+# seed catalogs (idempotent, safe to re-run)
+pnpm ts-node -r tsconfig-paths/register scripts/seed-recipes-ai.ts
+pnpm ts-node -r tsconfig-paths/register scripts/seed-exercises-ai.ts
+```
+
+```sh
+# mobile dir
+cd apps/mobile
+
+# run mobile unit tests (workout machine, future logic-only suites)
+pnpm test
+
+# run e2e tests (playwright web)
+pnpm test:e2e
+
+# start dev
+pnpm start
 ```
 
 ---
@@ -151,9 +177,15 @@ pnpm tsx scripts/diagnose-plans.ts
 - Each commit should compile and pass tests on its own.
 - Backend tests live in `apps/api/src/**/*.spec.ts` (unit) and
   `apps/api/test/**/*.e2e-spec.ts` (e2e).
+- Mobile pure-logic tests live in `apps/mobile/src/lib/**/*.spec.ts` (no
+  React or Expo imports — those need jest-expo and a separate config).
 - TDD: write the failing test first, then the smallest implementation that
   passes, then refactor. The recent commits demonstrate this rhythm.
 - Mobile API client base URL is already `/v1`, so screens call
-  `/planning/lifestyle/today` and the version prefix is added implicitly.
+  `/planning/lifestyle/today/detailed` and the version prefix is added
+  implicitly.
 - `.env` files are gitignored. `.env.example` documents the keys but never
   the values.
+- Prisma migrations ARE committed (un-ignored as of `6411e74d`). Always
+  generate migrations alongside schema changes so other devs and Supabase
+  can replay history.
