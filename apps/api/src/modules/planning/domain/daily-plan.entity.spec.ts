@@ -32,31 +32,25 @@ describe('DailyPlan Aggregate', () => {
     expect(plan.items[0]).toBe(item);
   });
 
-  it('should prevent adding more than 5 items', () => {
+  it('should prevent adding more than 20 items', () => {
     const plan = DailyPlan.create({
       userId: new UniqueEntityID(),
       date: new Date(),
     }).getValue();
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 20; i++) {
       plan.addItem(
         PlanItem.create({ title: `Item ${i}`, description: '' }).getValue(),
       );
     }
 
-    const item6 = PlanItem.create({
-      title: 'Item 6',
+    const overflow = PlanItem.create({
+      title: 'Overflow item',
       description: '',
     }).getValue();
 
-    // In strict DDD, we might throw or return Result.
-    // Here let's assume addItem returns void but throws/logs, OR we can make addItem return Result.
-    // For simplicity in this bounded context, let's enforce it via Result in strict mode,
-    // or just checking array length afterwards.
-    // Let's implement addItem to return Result<void> for better control.
-
-    const result = plan.addItem(item6);
+    const result = plan.addItem(overflow);
     expect(result.isFailure).toBe(true);
-    expect(result.error).toContain('Max 5 items');
+    expect(result.error).toContain('Max 20 items');
   });
 });

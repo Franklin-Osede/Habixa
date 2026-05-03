@@ -64,7 +64,14 @@ export class UserStats extends AggregateRoot<UserStatsProps> {
     const today = new Date(date);
     today.setHours(0, 0, 0, 0);
 
-    if (!lastDate) {
+    // First-ever activity: streak = 1.
+    // We treat `currentStreak === 0` as "first activity" alongside the
+    // null-lastDate case because the UserStats schema declares
+    // `lastActivityDate DateTime? @default(now())` — so a freshly
+    // created stats row already has a non-null lastDate equal to its
+    // creation moment, and the same-day diffDays === 0 branch would
+    // otherwise leave the streak at 0 forever.
+    if (!lastDate || this.props.currentStreak === 0) {
       this.props.currentStreak = 1;
     } else {
       const last = new Date(lastDate);

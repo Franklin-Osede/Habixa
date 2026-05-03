@@ -27,6 +27,11 @@ class MockUserRepository implements UserRepository {
   saveProfile(userId: string, data: any): Promise<void> {
     return Promise.resolve();
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  findProfileForMe(userId: string): Promise<any> {
+    return Promise.resolve(null);
+  }
 }
 
 describe('RegisterUserUseCase', () => {
