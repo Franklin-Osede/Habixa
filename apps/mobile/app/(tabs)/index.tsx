@@ -51,8 +51,10 @@ export default function HomeTab() {
               elevation: 6,
             }}
             activeOpacity={0.9}
+            onPress={() => router.push('/coach' as never)}
+            accessibilityLabel="Abrir coach"
           >
-            <MaterialIcons name="add" size={32} color="#0a1a0f" style={{ transform: [{ rotate: '-45deg' }] }} />
+            <MaterialIcons name="auto-awesome" size={28} color="#0a1a0f" />
           </TouchableOpacity>
         </View>
 
