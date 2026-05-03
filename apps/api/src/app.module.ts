@@ -8,6 +8,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { PlanningModule } from './modules/planning/planning.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { MeModule } from './modules/me/me.module';
+import { CoachModule } from './modules/coach/coach.module';
 import { HabitsModule } from './modules/habits/habits.module';
 import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 import { McpModule } from './modules/mcp/mcp.module';
@@ -36,6 +37,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     PlanningModule,
     RecipesModule,
     MeModule,
+    CoachModule,
     HabitsModule,
     KnowledgeModule,
     WorkoutsModule,
