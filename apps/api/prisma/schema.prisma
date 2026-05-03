@@ -67,6 +67,9 @@ model User {
   // AI Coach (Phase 6)
   coachConversations CoachConversation[]
 
+  // Voice (Phase 7)
+  voicePreference UserVoicePreference?
+
   password String
 }
 
@@ -350,6 +353,39 @@ model Exercise {
 
   // Relations
   workoutItems WorkoutItem[]
+  voiceCues    VoiceCue[]
+}
+
+// --- VOICE (Phase 7) ---
+
+// Cache-aside row for synthesized audio. Lookup key is the composite
+// (exerciseId?, cueKind, locale, voicePersona) — matched on every
+// request from the workout-session screen and the morning agent.
+// On cache miss, the VoiceCueService synthesizes via Polly, uploads
+// the mp3 to Supabase Storage, and persists a row pointing at the
+// public URL so subsequent requests are O(1) DB reads.
+model VoiceCue {
+  id           String   @id @default(uuid())
+  exerciseId   String? // null for non-exercise cues (morning, ambient...)
+  exercise     Exercise? @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  cueKind      String // 'intro' | 'mid_set' | 'last_rep' | 'rest_start' | 'morning_summary' | ...
+  locale       String // 'es-US' | 'es-ES' | 'es-MX'
+  voicePersona String // 'lupe' | 'sergio' | 'mia' | ...
+  scriptText   String
+  audioUrl     String
+  durationMs   Int?
+  generatedAt  DateTime @default(now())
+
+  @@unique([exerciseId, cueKind, locale, voicePersona])
+  @@index([exerciseId, cueKind])
+}
+
+model UserVoicePreference {
+  userId       String   @id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  voicePersona String   @default("lupe")
+  enabled      Boolean  @default(true)
+  updatedAt    DateTime @updatedAt
 }
 
 model Challenge {
