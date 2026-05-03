@@ -3,22 +3,32 @@
 > Living snapshot of where the codebase is and where to pick up next.
 > Update at the end of each working session.
 
-Last updated: **2026-05-02** (commit `f6b86a53`)
+Last updated: **2026-05-03** (commit `271c8eb4`)
 
 ---
 
 ## TL;DR — exact next step
 
-Phase 5 (adherence + skip) is **shipped end-to-end**. Streak and per-category
-consistency on the profile screen are now real values from
-`/v1/me/adherence`; meals/workouts/habits in `<TodayPlanDashboard />` can
-be skipped with a reason that preserves the streak.
+Phase 6 (AI coach with tool use) is **shipped end-to-end**. Tap the
+sparkle FAB on home to open `/coach`, send a message, and the backend
+runs a real Anthropic tool-use loop (claude-sonnet-4-6 by default) with
+`get_today_plan` and `get_adherence` as grounded read-only tools.
+Conversations + messages persist in Postgres and a stub-LLM E2E spec
+proves the contract end-to-end without burning Anthropic credits.
 
-The next high-leverage move is **Phase 6: AI Coach with tool use**. Concrete
-first action: scaffold a `CoachModule` with a `POST /v1/coach/message`
-endpoint backed by Anthropic SDK + tool-use, exposing read-only tools
-(`getTodayPlan`, `getAdherence`, `getStats`) so the agent can ground every
-reply in real user data instead of generic fitness advice.
+The next high-leverage moves, in priority order:
+
+1. **Write tools for the coach** — `swap_meal`, `swap_workout`,
+   `add_skip_with_reason`. Currently the coach can only describe state;
+   write tools let it actually adapt the plan after a chat. TDD path:
+   add one tool at a time with stub-driven E2E asserting the resulting
+   DB mutation.
+2. **Coach memory across conversations** — summarise old threads into
+   a `userProfile.coachContext` JSON the system prompt can include so
+   the model has continuity beyond a single chat.
+3. **Phase 7 voice** — TTS-cached morning agent + during-workout cues
+   (cheap one-time generation per exercise, served from R2/Supabase
+   Storage).
 
 ---
 
@@ -32,8 +42,8 @@ reply in real user data instead of generic fitness advice.
 | 3 | Recipe detail screen + weekly shopping list | done |
 | 3.5 | Real recipe catalog (50 AI-generated) + real exercise catalog (30 AI-generated) | done |
 | 4 | Workout session screen + state machine + workout exercise hydration | done |
-| 5 | Adherence: streak / consistency / skip with reason | **done** |
-| 6 | AI Coach (chat with tool use) | not started |
+| 5 | Adherence: streak / consistency / skip with reason | done |
+| 6 | AI Coach (chat with tool use, read-only tools) | **done** |
 | 7 | Voice (TTS cues, morning agent) | not started |
 
 ---
@@ -41,6 +51,10 @@ reply in real user data instead of generic fitness advice.
 ## What's shipped (recent commits)
 
 ```
+271c8eb4 feat(mobile): add /coach chat screen wired to the home FAB
+c37ee6ef feat(coach): ship POST /v1/coach/message backed by tool-use loop
+20565c24 feat(coach): add Conversation + Message schema and Anthropic SDK dep
+2a971296 docs: refresh RESUME.md with Phase 5 completion + Phase 6 starting plan
 f6b86a53 feat(mobile): real adherence on profile screen + skip CTA on home
 a46ee2a7 feat(planning): expose POST /v1/planning/lifestyle/activity/skip
 8537d8b3 feat(me): expose GET /v1/me/adherence with deterministic streak + consistency
@@ -92,34 +106,41 @@ touched these surfaces):
 
 ---
 
-## Phase 6 — AI Coach with tool use (next)
+## Phase 7 — Voice (next)
 
-Goal: a chat surface where the user talks to Habixa and the model has
-*real, grounded* context (today's plan, adherence trend, recent skips,
-weight history). The differentiator is tool use — generic chatbots can
-quote fitness facts; this one can say "I see you skipped 3 leg sessions
-in a row, want me to swap Wednesday for an upper-body day?".
+Goal: voice cues that the user hears at the moments they actually
+matter, without paying real-time TTS prices.
 
 Concrete steps:
 
-1. **Backend (TDD)**: `POST /v1/coach/message` with Anthropic SDK
-   - Body: `{ conversationId?, message }`
-   - Response: streamed assistant reply + any tool calls inspected
-   - Tools (start with read-only): `getTodayPlan`, `getAdherence`,
-     `getRecentSkips`, `getRecipe`, `getExercise`
-   - System prompt: dietitian + S&C coach voice, Spanish-first,
-     short responses, redirect on emotional/clinical signals.
-2. **Persistence**: `Conversation` and `Message` Prisma models
-   (id, userId, role, content, toolCalls, createdAt).
-3. **Backend tests**: stub the Anthropic client so unit tests are
-   deterministic; assert the right tool was called for prompts like
-   "what's my workout today" / "skipped lots, why" / "swap Wed".
-4. **Mobile**: new `/coach` route with chat list + input. Streamed
-   replies via SSE if the SDK exposes them.
-5. **Guardrails**: filter the system response if it strays into
-   medical advice; injected disclaimer for clinical questions.
-6. **Optional later**: write tools (`swapMeal`, `swapWorkout`,
-   `addNoteToToday`) once the read-only flow feels solid.
+1. **TTS cache layer** (TDD): a `VoiceCueService` that takes
+   `(exerciseId, cueKind, locale)` and returns a public URL. Looks up
+   `VoiceCue` row first; if missing, generates via OpenAI tts-1 (or
+   ElevenLabs), uploads to Supabase Storage, persists the URL. Cheap
+   one-time per (exercise × cue × locale).
+2. **Cues seed script**: pre-generate cues for the 30 exercises in the
+   catalog × 3 cue kinds (intro, mid-set push, last-rep) × es-ES.
+   ~$1 one-shot.
+3. **Mobile workout session screen integration**: schedule cue
+   playback at the start of each set + at 50% rest remaining.
+   `expo-av` for playback.
+4. **Morning agent**: nightly cron generates a 30-second audio
+   summary of tomorrow's plan + a short motivational angle pulled
+   from yesterday's adherence. Posts a push notification with the
+   audio.
+
+## Phase 6 follow-ups (already shipped, ideas for next iteration)
+
+- **Write tools**: `swap_meal(dayIndex, mealType, newRecipeId)`,
+  `swap_workout(dayIndex, newExerciseIds)`, `mark_skip_with_reason`.
+  Each tool mutates the plan content / DailyUserTask. TDD: stub-driven
+  E2E asserting DB mutation matches the LLM's tool input.
+- **Conversation memory**: summarise old threads via a nightly job
+  into `userProfile.coachContext` so the system prompt has continuity.
+- **Streaming**: switch the endpoint to SSE so the chat shows tokens
+  as they arrive instead of waiting for the full reply.
+- **Conversation listing UI**: surface `GET /coach/conversations` in
+  a side drawer so users can return to previous threads.
 
 ---
 
