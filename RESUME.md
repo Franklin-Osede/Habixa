@@ -147,20 +147,21 @@ Concrete steps:
 
 ## Open security items
 
-Three secrets were pasted in chat across this build and need rotation
-before this branch goes anywhere remote:
+Three secrets in `apps/api/.env` were transmitted via non-trusted
+channels during this build and should be rotated before the branch
+goes anywhere remote:
 
-- **OpenAI key** (`OPENAI_API_KEY`): used by seed scripts + the coach.
-  Rotate at https://platform.openai.com/api-keys.
-- **Supabase service-role key** (`sb_secret_*`) from the early Supabase
-  setup. Rotate from the project's API settings page.
-- **AWS access key** (`AKIAYNLU...`) for Polly. Rotate, and ideally
-  replace with a dedicated IAM user `habixa-polly-user` whose policy
-  is just `polly:SynthesizeSpeech` (+ `s3:PutObject` on the voice
-  bucket if/when we add an S3 fallback).
+- `OPENAI_API_KEY` — rotate at https://platform.openai.com/api-keys
+- `SUPABASE_SERVICE_ROLE_KEY` — rotate from the Supabase project's
+  API settings page
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — rotate in IAM and,
+  ideally, replace with a dedicated IAM user (`habixa-polly-user`)
+  whose policy is just `polly:SynthesizeSpeech` (+ `s3:PutObject`
+  on the voice bucket if/when we add an S3 fallback).
 
-None of these are in git (`.env` is gitignored, verified via
-`git check-ignore`), but chat transcripts are not a trusted channel.
+None of these are in git (`.env` is gitignored — verified via
+`git check-ignore`). They are also intentionally NOT echoed inside
+this document; consult `.env` directly for current values.
 
 ---
 
