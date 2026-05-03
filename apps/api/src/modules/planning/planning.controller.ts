@@ -186,14 +186,13 @@ export class PlanningController {
   async getLifestyleToday(@Req() req: any): Promise<LifestyleTodayStatusDto> {
     const userId = req.user?.id || req.user?.sub || req.user?.userId;
     if (!userId) throw new BadRequestException('User not authenticated');
-    return this.resolveLifestyleToday(userId);
+    return this.resolveLifestyleToday(userId as string);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({
-    summary:
-      "Get today's plan with hydrated recipes and ingredient quantities",
+    summary: "Get today's plan with hydrated recipes and ingredient quantities",
     description:
       'Same discriminated union as GET lifestyle/today, but for the READY ' +
       'state every meal is hydrated with its full Recipe (title, instructions, ' +
@@ -214,7 +213,7 @@ export class PlanningController {
     const userId = req.user?.id || req.user?.sub || req.user?.userId;
     if (!userId) throw new BadRequestException('User not authenticated');
 
-    const status = await this.resolveLifestyleToday(userId);
+    const status = await this.resolveLifestyleToday(userId as string);
     if (status.status !== PLAN_STATUS.READY) return status;
 
     return { ...status, day: await this.hydrateDay(status.day) };
@@ -472,7 +471,7 @@ export class PlanningController {
   @ApiOperation({
     summary: 'Aggregated weekly shopping list grouped by ingredient',
     description:
-      'Walks the user\'s current READY lifestyle plan, sums ingredient ' +
+      "Walks the user's current READY lifestyle plan, sums ingredient " +
       'quantities across all 7 days, and returns one entry per ' +
       '(ingredient, unit) pair sorted in canonical shopping order ' +
       '(Protein -> Carb -> Fat -> Veg -> Fruit -> Dairy -> Pantry). ' +

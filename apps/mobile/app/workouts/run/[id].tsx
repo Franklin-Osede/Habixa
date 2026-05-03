@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useReducer, useState } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {
   totalSets as planTotalSets,
   completedSets as planCompletedSets,
 } from '../../../src/lib/workout/workout-session.machine';
+import { useVoiceCue } from '../../../src/lib/workout/use-voice-cue';
 
 type HydratedExercise = {
   id: string;
@@ -83,6 +84,8 @@ export default function WorkoutSessionScreen() {
     plan ? reduceSession(plan, s, e) : s;
   const [state, dispatch] = useReducer(reducer, initialState());
 
+  const { playCue } = useVoiceCue();
+
   // Fetch the day plan and shape it for the state machine.
   useEffect(() => {
     let cancelled = false;
@@ -143,6 +146,36 @@ export default function WorkoutSessionScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [state.kind]);
+
+  // Voice cues fired on state-machine transitions:
+  //  - "intro" at the start of every exercise (setIndex === 0)
+  //  - "rest_start" whenever we land in the resting state
+  // The hook is graceful by default — a missing cue or audio error
+  // never breaks the visual session flow.
+  useEffect(() => {
+    if (!plan) return;
+    if (state.kind === 'exercising' && state.setIndex === 0) {
+      const exercise = plan.exercises[state.exerciseIndex];
+      if (exercise) {
+        void playCue({ kind: 'intro', exerciseId: exercise.exerciseId });
+      }
+      return;
+    }
+    if (state.kind === 'resting') {
+      void playCue({ kind: 'rest_start' });
+    }
+  }, [
+    plan,
+    state.kind,
+    // exerciseIndex / setIndex / nextSetIndex change shape per state
+    // variant; pulling them out via discriminated access keeps the
+    // dependency list narrow enough that idle / completed transitions
+    // don't replay cues.
+    state.kind === 'exercising' ? state.exerciseIndex : null,
+    state.kind === 'exercising' ? state.setIndex : null,
+    state.kind === 'resting' ? state.exerciseIndex : null,
+    playCue,
+  ]);
 
   // Mark the workout completed in the backend once we hit the completed state.
   useEffect(() => {
