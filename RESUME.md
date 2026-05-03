@@ -3,32 +3,30 @@
 > Living snapshot of where the codebase is and where to pick up next.
 > Update at the end of each working session.
 
-Last updated: **2026-05-03** (commit `271c8eb4`)
+Last updated: **2026-05-03** (commit `5ab46d33`)
 
 ---
 
 ## TL;DR — exact next step
 
-Phase 6 (AI coach with tool use) is **shipped end-to-end**. Tap the
-sparkle FAB on home to open `/coach`, send a message, and the backend
-runs a real Anthropic tool-use loop (claude-sonnet-4-6 by default) with
-`get_today_plan` and `get_adherence` as grounded read-only tools.
-Conversations + messages persist in Postgres and a stub-LLM E2E spec
-proves the contract end-to-end without burning Anthropic credits.
+Phase 6 is shipped, the coach **defaults to OpenAI gpt-4o-mini** so it
+can be tested without an Anthropic key, and the `.env` is now seeded
+with AWS credentials for Phase 7 (Polly TTS).
 
-The next high-leverage moves, in priority order:
+**Before any code lands on Phase 7, two things still need to happen:**
 
-1. **Write tools for the coach** — `swap_meal`, `swap_workout`,
-   `add_skip_with_reason`. Currently the coach can only describe state;
-   write tools let it actually adapt the plan after a chat. TDD path:
-   add one tool at a time with stub-driven E2E asserting the resulting
-   DB mutation.
-2. **Coach memory across conversations** — summarise old threads into
-   a `userProfile.coachContext` JSON the system prompt can include so
-   the model has continuity beyond a single chat.
-3. **Phase 7 voice** — TTS-cached morning agent + during-workout cues
-   (cheap one-time generation per exercise, served from R2/Supabase
-   Storage).
+1. Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` directly to
+   `apps/api/.env` from
+   https://supabase.com/dashboard/project/dvkuyqchvnclyvffblei/settings/api
+2. Decide whether the bucket `habixa-voice` will be auto-created by
+   the SDK on first run (recommended) or pre-created in the dashboard.
+
+Once both are done, the very next coding step is:
+
+> Stub-first TDD path for `VoiceCueService`: write the failing spec
+> against in-memory `TtsPort` + `AudioStoragePort` stubs, implement the
+> service to pass, then wire `PollyTts` and `SupabaseAudioStorage` as
+> the real adapters. Same hexagonal pattern as the coach LLM.
 
 ---
 
@@ -51,6 +49,9 @@ The next high-leverage moves, in priority order:
 ## What's shipped (recent commits)
 
 ```
+5ab46d33 docs(env): document Phase 6 / Phase 7 env vars in .env.example
+2cc3f2c6 feat(coach): add OpenAI adapter and make it the default LLM provider
+780541b4 docs: refresh RESUME.md with Phase 6 completion + Phase 7 plan
 271c8eb4 feat(mobile): add /coach chat screen wired to the home FAB
 c37ee6ef feat(coach): ship POST /v1/coach/message backed by tool-use loop
 20565c24 feat(coach): add Conversation + Message schema and Anthropic SDK dep
@@ -146,11 +147,20 @@ Concrete steps:
 
 ## Open security items
 
-- The OpenAI key pasted in chat earlier is in `apps/api/.env`. **Rotate it**
-  at https://platform.openai.com/api-keys before this branch goes anywhere
-  near a remote.
-- The Supabase `sb_secret_*` pasted earlier in the same chat should also
-  be rotated if not already done.
+Three secrets were pasted in chat across this build and need rotation
+before this branch goes anywhere remote:
+
+- **OpenAI key** (`OPENAI_API_KEY`): used by seed scripts + the coach.
+  Rotate at https://platform.openai.com/api-keys.
+- **Supabase service-role key** (`sb_secret_*`) from the early Supabase
+  setup. Rotate from the project's API settings page.
+- **AWS access key** (`AKIAYNLU...`) for Polly. Rotate, and ideally
+  replace with a dedicated IAM user `habixa-polly-user` whose policy
+  is just `polly:SynthesizeSpeech` (+ `s3:PutObject` on the voice
+  bucket if/when we add an S3 fallback).
+
+None of these are in git (`.env` is gitignored, verified via
+`git check-ignore`), but chat transcripts are not a trusted channel.
 
 ---
 
