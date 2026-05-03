@@ -3,30 +3,41 @@
 > Living snapshot of where the codebase is and where to pick up next.
 > Update at the end of each working session.
 
-Last updated: **2026-05-03** (commit `5ab46d33`)
+Last updated: **2026-05-03** (latest commit on the voice slice)
 
 ---
 
 ## TL;DR — exact next step
 
-Phase 6 is shipped, the coach **defaults to OpenAI gpt-4o-mini** so it
-can be tested without an Anthropic key, and the `.env` is now seeded
-with AWS credentials for Phase 7 (Polly TTS).
+Phase 7 voice is **shipped end-to-end across backend + mobile**. The
+WorkoutSessionScreen plays real Polly cues at the start of every
+exercise and at the entry to every rest period via the new useVoiceCue
+hook + expo-av integration. Backend, schema, ports, service, adapters,
+and a seed script are all in place; the suite stays at 211/211 green.
 
-**Before any code lands on Phase 7, two things still need to happen:**
+**The single thing blocking a full demo right now is the local Docker
+daemon.** It is failing to pull `postgres:16-alpine` from Docker Hub
+with a TLS-certificate error against the R2 backend storage. While the
+daemon is broken the API cannot connect to Prisma, so the seed script
+cannot run and `pnpm start:dev` will refuse to come up.
 
-1. Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` directly to
-   `apps/api/.env` from
-   https://supabase.com/dashboard/project/dvkuyqchvnclyvffblei/settings/api
-2. Decide whether the bucket `habixa-voice` will be auto-created by
-   the SDK on first run (recommended) or pre-created in the dashboard.
+**Pre-restart action plan when the machine is back online:**
 
-Once both are done, the very next coding step is:
-
-> Stub-first TDD path for `VoiceCueService`: write the failing spec
-> against in-memory `TtsPort` + `AudioStoragePort` stubs, implement the
-> service to pass, then wire `PollyTts` and `SupabaseAudioStorage` as
-> the real adapters. Same hexagonal pattern as the coach LLM.
+1. Fix Docker. Try in order:
+   - Quit and reopen OrbStack (or whichever runtime is the active
+     Docker context).
+   - If still failing, switch context: `docker context use desktop-linux`
+     or `colima` if either is installed and healthy.
+   - If TLS error persists, it is almost certainly a corporate proxy
+     / VPN intercepting HTTPS to Cloudflare R2 — disable the proxy.
+2. Once `docker pull postgres:16-alpine` succeeds:
+   - `docker compose up -d postgres redis` from the repo root.
+   - `cd apps/api && pnpm prisma migrate deploy` to apply any pending
+     migrations (including the VoiceCue tables).
+   - Run the cue seed: `pnpm tsx scripts/seed-voice-cues.ts`
+     (~$0.06 in Polly Neural for 30 Lupe intro cues).
+3. Start the dev stack: `bash dev-start.sh` from the repo root, then
+   open `http://localhost:4216` in the browser.
 
 ---
 
@@ -41,22 +52,28 @@ Once both are done, the very next coding step is:
 | 3.5 | Real recipe catalog (50 AI-generated) + real exercise catalog (30 AI-generated) | done |
 | 4 | Workout session screen + state machine + workout exercise hydration | done |
 | 5 | Adherence: streak / consistency / skip with reason | done |
-| 6 | AI Coach (chat with tool use, read-only tools) | **done** |
-| 7 | Voice (TTS cues, morning agent) | not started |
+| 6 | AI Coach (chat with tool use, read-only tools) | done |
+| 7 | Voice — Polly TTS + Supabase Storage + mobile playback | **done** (seed pending Docker recovery) |
+| 7.5 | Pre-existing test failures cleared | done |
 
 ---
 
 ## What's shipped (recent commits)
 
 ```
+15000940 feat(voice): play AI cues during workout sessions + seed-voice-cues script
+6d72a1d9 fix: clear the four pre-existing test failures and a real streak bug
+6d5a67ed feat(voice): ship GET /v1/voice/cue with Polly + Supabase Storage adapters
+074ec316 feat(voice): TDD VoiceCueService with TtsPort + AudioStoragePort abstractions
+71109af1 feat(voice): add VoiceCue + UserVoicePreference schema and TTS / Storage SDKs
+33c086ed docs: scrub secret-identifying fragments from RESUME.md
+de0bccf4 docs: pre-restart snapshot — coach defaults to OpenAI, Phase 7 ready to start
 5ab46d33 docs(env): document Phase 6 / Phase 7 env vars in .env.example
 2cc3f2c6 feat(coach): add OpenAI adapter and make it the default LLM provider
 780541b4 docs: refresh RESUME.md with Phase 6 completion + Phase 7 plan
 271c8eb4 feat(mobile): add /coach chat screen wired to the home FAB
 c37ee6ef feat(coach): ship POST /v1/coach/message backed by tool-use loop
 20565c24 feat(coach): add Conversation + Message schema and Anthropic SDK dep
-2a971296 docs: refresh RESUME.md with Phase 5 completion + Phase 6 starting plan
-f6b86a53 feat(mobile): real adherence on profile screen + skip CTA on home
 a46ee2a7 feat(planning): expose POST /v1/planning/lifestyle/activity/skip
 8537d8b3 feat(me): expose GET /v1/me/adherence with deterministic streak + consistency
 69966079 feat(planning): add skipReason / skipNotes / skippedAt to DailyUserTask
