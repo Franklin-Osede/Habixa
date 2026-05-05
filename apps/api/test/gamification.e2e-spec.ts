@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -77,7 +78,7 @@ describe('Gamification (e2e)', () => {
     });
 
     // 3. Complete Habit via API
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     await request(app.getHttpServer())
       .post(`/v1/habits/${habit.id}/complete`)
       .send({ userId: user.id, date: new Date().toISOString() })

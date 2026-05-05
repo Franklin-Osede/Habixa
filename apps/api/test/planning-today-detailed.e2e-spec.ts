@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -112,7 +113,9 @@ describe('GET /v1/planning/lifestyle/today/detailed (e2e)', () => {
   });
 
   it('returns 401 when no auth token is provided', () => {
-    return request(app.getHttpServer() as never).get(ENDPOINT).expect(401);
+    return request(app.getHttpServer() as never)
+      .get(ENDPOINT)
+      .expect(401);
   });
 
   it('returns NOT_STARTED when the user has no lifestyle plan', async () => {
@@ -298,7 +301,10 @@ describe('GET /v1/planning/lifestyle/today/detailed (e2e)', () => {
       data: {
         lifestylePlanId: plan.id,
         weekIndex: 1,
-        content: buildValidWeekContent(recipeId, 'unknown_exercise_id') as never,
+        content: buildValidWeekContent(
+          recipeId,
+          'unknown_exercise_id',
+        ) as never,
         schemaVersion: 'plan_week_v1',
         validationScore: 100,
       },

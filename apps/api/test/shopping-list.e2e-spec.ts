@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -98,7 +99,9 @@ describe('GET /v1/planning/lifestyle/shopping-list (e2e)', () => {
   });
 
   it('returns 401 when no auth token is provided', () => {
-    return request(app.getHttpServer() as never).get(ENDPOINT).expect(401);
+    return request(app.getHttpServer() as never)
+      .get(ENDPOINT)
+      .expect(401);
   });
 
   it('returns 404 when the user has no READY lifestyle plan', () => {

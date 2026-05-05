@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -58,7 +59,9 @@ describe('GET /v1/me/adherence (e2e)', () => {
   });
 
   it('returns 401 when no auth token is provided', () => {
-    return request(app.getHttpServer() as never).get(ENDPOINT).expect(401);
+    return request(app.getHttpServer() as never)
+      .get(ENDPOINT)
+      .expect(401);
   });
 
   it('returns zero adherence with windowDays=7 when the user has no plan', async () => {
@@ -285,7 +288,12 @@ function buildPlanContent() {
               id: `day${dayIndex}_block1`,
               type: 'main',
               exercises: [
-                { exerciseId: 'fallback_exercise', sets: 3, reps: '10', restSec: 60 },
+                {
+                  exerciseId: 'fallback_exercise',
+                  sets: 3,
+                  reps: '10',
+                  restSec: 60,
+                },
               ],
             },
           ],

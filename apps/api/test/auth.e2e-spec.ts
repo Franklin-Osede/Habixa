@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -29,7 +30,6 @@ describe('Authentication (e2e)', () => {
   });
 
   it('should register a new user', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return request(app.getHttpServer())
       .post('/v1/identity/register')
       .send({
@@ -40,7 +40,6 @@ describe('Authentication (e2e)', () => {
   });
 
   it('should login with created user', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const response = await request(app.getHttpServer())
       .post('/v1/auth/login')
       .send({
@@ -54,7 +53,6 @@ describe('Authentication (e2e)', () => {
   });
 
   it('should fail login with wrong password', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return request(app.getHttpServer())
       .post('/v1/auth/login')
       .send({

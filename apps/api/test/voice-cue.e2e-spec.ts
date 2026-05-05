@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -15,31 +16,32 @@ describe('GET /v1/voice/cue (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let accessToken: string;
-  let userId: string;
   let exerciseId: string;
 
   // In-memory stand-ins for the real Polly + Supabase adapters so the
-  // suite is fast and free.
+  // suite is fast and free. Methods return Promise.resolve directly
+  // rather than `async` because they synthesize their result
+  // synchronously — keeps eslint's require-await happy.
   const ttsStub = {
     calls: [] as unknown[],
-    async synthesize(req: unknown) {
+    synthesize(req: unknown) {
       this.calls.push(req);
-      return {
+      return Promise.resolve({
         audio: Buffer.from('fake-mp3'),
         contentType: 'audio/mpeg',
         durationMs: 1234,
-      };
+      });
     },
   };
 
   const storageStub = {
     uploads: [] as Array<{ key: string }>,
-    async upload(payload: { key: string; audio: Buffer; contentType: string }) {
+    upload(payload: { key: string; audio: Buffer; contentType: string }) {
       this.uploads.push({ key: payload.key });
-      return {
+      return Promise.resolve({
         publicUrl: `https://stub.local/voice/${payload.key}`,
         storedAt: new Date(),
-      };
+      });
     },
   };
 
@@ -68,7 +70,7 @@ describe('GET /v1/voice/cue (e2e)', () => {
       .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
     accessToken = loginRes.body.accessToken;
     const user = await prisma.user.findUnique({ where: { email: TEST_EMAIL } });
-    userId = user!.id;
+    void user; // anchored only for the cleanup helper to find by email
 
     const exercise = await prisma.exercise.create({
       data: {
@@ -162,7 +164,9 @@ describe('GET /v1/voice/cue (e2e)', () => {
 
   it('respects an explicit persona + locale combo', async () => {
     const res = await request(app.getHttpServer() as never)
-      .get(`${ENDPOINT}?kind=intro&persona=sergio&locale=es-ES&exerciseId=${exerciseId}`)
+      .get(
+        `${ENDPOINT}?kind=intro&persona=sergio&locale=es-ES&exerciseId=${exerciseId}`,
+      )
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
