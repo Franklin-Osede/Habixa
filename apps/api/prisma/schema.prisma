@@ -277,6 +277,7 @@ model UserStats {
   goals             String[]
   measurementSystem String? // Metric/Imperial
   integrations      Json?
+  mealPreferences   Json? // { [day]: { [mealIndex]: "free-text or comma-separated tags" } }
 }
 
 model Habit {

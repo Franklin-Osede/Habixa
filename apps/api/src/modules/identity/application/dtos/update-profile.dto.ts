@@ -11,4 +11,5 @@ export class UpdateProfileDto {
     googleFit?: boolean;
     [key: string]: any;
   };
+  mealPreferences?: Record<string, Record<number, string>>;
 }

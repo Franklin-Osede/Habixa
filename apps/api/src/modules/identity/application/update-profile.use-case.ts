@@ -37,6 +37,7 @@ export class UpdateProfileUseCase {
       goals: dto.goals ?? [],
       measurementSystem: dto.measurementSystem ?? 'metric',
       integrations: integrationsList,
+      mealPreferences: dto.mealPreferences,
     });
 
     return Result.ok();

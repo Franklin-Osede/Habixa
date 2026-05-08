@@ -16,6 +16,16 @@ function buildProfilePayload(params: Record<string, string | undefined>) {
   const weight = params.weight ? Number(params.weight) : undefined;
   const height = params.height ? Number(params.height) : undefined;
   const goals = params.selectedTags ? params.selectedTags.split(',') : [];
+
+  let mealPreferences: Record<string, Record<number, string>> | undefined;
+  if (params.weeklyPlan) {
+    try {
+      mealPreferences = JSON.parse(params.weeklyPlan);
+    } catch {
+      mealPreferences = undefined;
+    }
+  }
+
   return {
     age,
     weight,
@@ -23,6 +33,7 @@ function buildProfilePayload(params: Record<string, string | undefined>) {
     goals,
     measurementSystem: (params.unitSystem as 'metric' | 'imperial') || 'metric',
     dietaryPreference: params.dietType,
+    mealPreferences,
   };
 }
 

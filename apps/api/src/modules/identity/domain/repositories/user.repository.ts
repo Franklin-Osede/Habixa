@@ -9,6 +9,7 @@ export interface UserProfileData {
   goals?: string[];
   measurementSystem?: string;
   integrations?: string[];
+  mealPreferences?: Record<string, Record<number, string>>;
 }
 
 /** Read model for /me: id, email, gamification fields. */

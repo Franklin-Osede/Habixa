@@ -91,6 +91,7 @@ export class PrismaUserRepository implements UserRepository {
         goals: data.goals,
         measurementSystem: data.measurementSystem,
         integrations: data.integrations,
+        mealPreferences: data.mealPreferences,
       },
       create: {
         userId: userId,
@@ -102,6 +103,7 @@ export class PrismaUserRepository implements UserRepository {
         goals: data.goals,
         measurementSystem: data.measurementSystem,
         integrations: data.integrations,
+        mealPreferences: data.mealPreferences,
         xp: 0,
         level: 1,
         currentStreak: 0,
