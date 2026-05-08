@@ -5,7 +5,6 @@
 
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -21,8 +20,7 @@ import {
 } from '../components';
 import { Colors } from '@/constants/Colors';
 
-export function MapScreen() {
-  const router = useRouter();
+export function MapScreen({ onBack }: { onBack?: () => void } = {}) {
   const { t } = useTranslation();
   const {
     pathState,
@@ -66,25 +64,22 @@ export function MapScreen() {
     setVictoryResult(null);
   }, [victoryResult, applyCompletion]);
 
-  const handleBack = useCallback(() => {
-    router.push('/onboarding/step-contract' as import('expo-router').Href);
-  }, [router]);
-
   const phaseLabel = t('map.phase');
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safe} edges={['top']}>
-        {/* Botón atrás fijo arriba a la izquierda para volver al resumen del plan */}
-        <TouchableOpacity
-          style={styles.backButtonFixed}
-          onPress={handleBack}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="arrow-back-ios" size={22} color={Colors.text} />
-          <Text style={styles.backLabel}>{t('common.back')}</Text>
-        </TouchableOpacity>
+        {onBack ? (
+          <TouchableOpacity
+            style={styles.backButtonFixed}
+            onPress={onBack}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="arrow-back-ios" size={22} color={Colors.text} />
+            <Text style={styles.backLabel}>{t('common.back')}</Text>
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.headerRow}>
           <PathHeader wallet={pathState.wallet} phaseLabel={phaseLabel} />
         </View>
@@ -147,7 +142,6 @@ const styles = StyleSheet.create({
   headerRow: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    paddingLeft: 100,
     backgroundColor: 'rgba(21, 36, 26, 0.9)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.06)',
