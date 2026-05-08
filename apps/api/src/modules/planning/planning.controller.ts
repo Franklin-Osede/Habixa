@@ -16,6 +16,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { LifestyleActivityCompletedEvent } from '../../shared/domain/events/gamification.events';
 import {
   ApiBearerAuth,
   ApiExtraModels,
@@ -60,6 +62,7 @@ export class PlanningController {
     private readonly generateLifestylePlanUseCase: GenerateLifestylePlanUseCase,
     private readonly prisma: PrismaService,
     private readonly shoppingListAggregator: ShoppingListAggregatorService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Post('generate')
@@ -718,6 +721,15 @@ export class PlanningController {
     normalizedDate.setUTCHours(0, 0, 0, 0);
     const activityId = body.activityId || 'lifestyle_activity';
     const title = body.title || 'Lifestyle Activity';
+    const activityType = body.activityType || 'day';
+
+    const previous = await this.prisma.dailyUserTask.findUnique({
+      where: {
+        userId_date_activityId: { userId, date: normalizedDate, activityId },
+      },
+      select: { isCompleted: true },
+    });
+    const wasAlreadyCompleted = previous?.isCompleted === true;
 
     const task = await this.prisma.dailyUserTask.upsert({
       where: {
@@ -731,7 +743,7 @@ export class PlanningController {
         userId,
         title,
         activityId,
-        activityType: body.activityType || 'day',
+        activityType,
         planWeekId: body.planWeekId,
         isCompleted: true,
         date: normalizedDate,
@@ -739,12 +751,24 @@ export class PlanningController {
       },
       update: {
         title,
-        activityType: body.activityType || 'day',
+        activityType,
         planWeekId: body.planWeekId,
         isCompleted: true,
         completedAt: new Date(),
       },
     });
+
+    if (!wasAlreadyCompleted) {
+      this.eventEmitter.emit(
+        'lifestyle_activity.completed',
+        new LifestyleActivityCompletedEvent(
+          userId,
+          activityType,
+          activityId,
+          normalizedDate,
+        ),
+      );
+    }
 
     const pendingReferral = await this.prisma.referralRedemption.findFirst({
       where: { invitedUserId: userId, status: 'PENDING' },

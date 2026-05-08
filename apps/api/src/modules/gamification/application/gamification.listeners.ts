@@ -4,8 +4,24 @@ import { GamificationService } from './gamification.service';
 import {
   HabitCompletedEvent,
   DailyPlanCompletedEvent,
+  LifestyleActivityCompletedEvent,
 } from '../../../shared/domain/events/gamification.events';
 import { XP_VALUES } from '../domain/xp.constants';
+
+function xpForActivityType(activityType: string): number {
+  switch (activityType) {
+    case 'workout':
+      return XP_VALUES.LIFESTYLE_WORKOUT_COMPLETION;
+    case 'meal':
+      return XP_VALUES.LIFESTYLE_MEAL_COMPLETION;
+    case 'habit':
+      return XP_VALUES.HABIT_COMPLETION;
+    case 'day':
+      return XP_VALUES.DAILY_PLAN_COMPLETION;
+    default:
+      return XP_VALUES.LIFESTYLE_ACTIVITY_FALLBACK;
+  }
+}
 
 @Injectable()
 export class GamificationListeners {
@@ -27,5 +43,16 @@ export class GamificationListeners {
       event.userId,
       XP_VALUES.DAILY_PLAN_COMPLETION,
     );
+  }
+
+  @OnEvent('lifestyle_activity.completed')
+  async handleLifestyleActivityCompleted(
+    event: LifestyleActivityCompletedEvent,
+  ) {
+    await this.gamificationService.awardXp(
+      event.userId,
+      xpForActivityType(event.activityType),
+    );
+    await this.gamificationService.updateStreak(event.userId);
   }
 }

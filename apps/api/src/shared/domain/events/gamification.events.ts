@@ -13,3 +13,12 @@ export class DailyPlanCompletedEvent {
     public readonly date: Date,
   ) {}
 }
+
+export class LifestyleActivityCompletedEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly activityType: string,
+    public readonly activityId: string,
+    public readonly date: Date,
+  ) {}
+}
