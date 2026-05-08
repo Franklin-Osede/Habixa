@@ -5,6 +5,23 @@
 
 import { Platform } from 'react-native';
 
+// Single source of truth for Habixa brand. Every screen should pull from
+// here instead of redeclaring hex literals.
+export const Brand = {
+  bgDark: '#15241a',
+  bgDarkElevated: '#102216',
+  surface: 'rgba(255,255,255,0.05)',
+  surfaceStrong: 'rgba(255,255,255,0.08)',
+  border: 'rgba(255,255,255,0.10)',
+  accent: '#0df259',
+  accentInk: '#0a1a0f',
+  textPrimary: '#ffffff',
+  textMuted: 'rgba(255,255,255,0.6)',
+  textDim: 'rgba(255,255,255,0.4)',
+  danger: '#ff4444',
+  warning: '#f5a524',
+} as const;
+
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 

@@ -6,6 +6,12 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "back": "Volver",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "skip": "Saltar",
+    "start": "Empezar",
+    "continue": "Continuar",
+    "language": "Idioma",
     "daysPassed": "días pasados",
     "daysLeft": "días restantes",
     "months": {
@@ -345,5 +351,111 @@
           "sleep": "Sueño",
           "calories": "Calorías"
       }
+  },
+  "tabs": {
+    "home": "Inicio",
+    "workouts": "Entreno",
+    "ruta": "Ruta",
+    "nutrition": "Nutrición",
+    "profile": "Perfil",
+    "coach": "Coach"
+  },
+  "plan": {
+    "todayTitle": "Tu Plan de Hoy",
+    "workout": "Entrenamiento",
+    "workoutOfTheDay": "Entrenamiento del día",
+    "nutrition": "Nutrición",
+    "habits": "Hábitos",
+    "startWorkout": "Comenzar entreno",
+    "repeatWorkout": "Repetir entreno",
+    "viewIngredients": "Ver ingredientes",
+    "more": "Más",
+    "skipReasonTitle": "Saltar: {{label}}",
+    "skipReasonBody": "Esto no rompe tu racha pero cuenta como no completado. ¿Por qué saltas?",
+    "skipReasons": {
+      "illness": "Estoy enfermo",
+      "time": "No tengo tiempo hoy",
+      "mood": "No me siento con ánimo",
+      "travel": "Estoy de viaje",
+      "injury": "Lesión / molestia",
+      "other": "Otro"
+    },
+    "errors": {
+      "todayLoad": "No se pudo cargar el plan de hoy.",
+      "generic": "No pudimos generar tu plan."
+    },
+    "states": {
+      "configure": "Configura tu plan",
+      "configureBody": "Aún no has generado tu primer plan. Completa el onboarding para empezar.",
+      "generating": "Generando tu plan…",
+      "generatingBody": "Estamos creando tu plan personalizado. Esto puede tardar unos segundos."
+    },
+    "mealTypes": {
+      "breakfast": "Desayuno",
+      "lunch": "Almuerzo",
+      "snack": "Snack",
+      "dinner": "Cena"
+    }
+  },
+  "workout": {
+    "title": "Entrenamiento",
+    "exerciseOf": "Ejercicio {{current}} de {{total}}",
+    "setOf": "Serie {{current}} de {{total}} · {{reps}} reps",
+    "exercisesAndSets": "{{exercises}} ejercicios · {{sets}} series totales",
+    "completedSet": "Serie completada",
+    "rest": "DESCANSO",
+    "skipRest": "Saltar descanso",
+    "nextSet": "Próxima: serie {{current}} de {{total}}",
+    "completed": "¡Entreno completado!",
+    "completedBody": "{{exercises}} ejercicios · {{sets}} series · {{title}}",
+    "abortTitle": "Salir del entrenamiento",
+    "abortBody": "¿Seguro que quieres salir? El progreso de la sesión actual no se guardará.",
+    "keepGoing": "Seguir entrenando",
+    "exit": "Salir",
+    "interrupted": "Sesión interrumpida.",
+    "noWorkoutToday": "No hay un entrenamiento listo para hoy.",
+    "noExercises": "Este entrenamiento no tiene ejercicios cargados.",
+    "loadFailed": "No se pudo cargar el entrenamiento.",
+    "noData": "Sin datos"
+  },
+  "nutrition": {
+    "title": "Nutrición",
+    "todayMeals": "Comidas de hoy",
+    "macrosToday": "Macros de hoy",
+    "kcal": "kcal",
+    "protein": "Proteína",
+    "carbs": "Carbos",
+    "fats": "Grasas",
+    "viewShoppingList": "Lista de la compra de la semana",
+    "logMealOutsidePlan": "Registrar comida fuera del plan",
+    "noPlan": "Aún no hay un plan de nutrición para hoy.",
+    "loadFailed": "No se pudo cargar tu nutrición.",
+    "viewRecipe": "Ver receta",
+    "ingredients": "Ingredientes",
+    "instructions": "Preparación",
+    "noIngredients": "Esta receta aún no tiene ingredientes registrados.",
+    "vegan": "Vegano",
+    "glutenFree": "Sin gluten",
+    "min": "min",
+    "recipeNotFound": "Esta receta no se encuentra en el catálogo.",
+    "recipeLoadFailed": "No se pudo cargar la receta."
+  },
+  "profile": {
+    "streakDays": "Días seguidos",
+    "consistency": "Consistencia",
+    "workout": "Entreno",
+    "nutrition": "Nutrición",
+    "habits": "Hábitos",
+    "settings": "Ajustes",
+    "notifications": "Notificaciones",
+    "subscription": "Suscripción",
+    "language": "Idioma",
+    "languageHelper": "Cambia el idioma de la app",
+    "logout": "Cerrar sesión",
+    "version": "Versión {{version}}"
+  },
+  "coach": {
+    "tabLabel": "Coach",
+    "openCoach": "Abrir coach"
   }
 }

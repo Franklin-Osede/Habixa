@@ -6,6 +6,12 @@
     "save": "Save",
     "cancel": "Cancel",
     "back": "Back",
+    "retry": "Retry",
+    "close": "Close",
+    "skip": "Skip",
+    "start": "Start",
+    "continue": "Continue",
+    "language": "Language",
     "daysPassed": "days passed",
     "daysLeft": "days left",
     "months": {
@@ -344,5 +350,111 @@
           "sleep": "Sleep",
           "calories": "Calories"
       }
+  },
+  "tabs": {
+    "home": "Home",
+    "workouts": "Workouts",
+    "ruta": "Path",
+    "nutrition": "Nutrition",
+    "profile": "Profile",
+    "coach": "Coach"
+  },
+  "plan": {
+    "todayTitle": "Today's Plan",
+    "workout": "Workout",
+    "workoutOfTheDay": "Today's workout",
+    "nutrition": "Nutrition",
+    "habits": "Habits",
+    "startWorkout": "Start workout",
+    "repeatWorkout": "Repeat workout",
+    "viewIngredients": "View ingredients",
+    "more": "More",
+    "skipReasonTitle": "Skip: {{label}}",
+    "skipReasonBody": "This won't break your streak but it counts as not completed. Why are you skipping?",
+    "skipReasons": {
+      "illness": "I'm sick",
+      "time": "No time today",
+      "mood": "Not feeling it",
+      "travel": "I'm traveling",
+      "injury": "Injury / pain",
+      "other": "Other"
+    },
+    "errors": {
+      "todayLoad": "Couldn't load today's plan.",
+      "generic": "We couldn't generate your plan."
+    },
+    "states": {
+      "configure": "Set up your plan",
+      "configureBody": "You haven't generated your first plan yet. Complete onboarding to begin.",
+      "generating": "Generating your plan…",
+      "generatingBody": "We're crafting your personalized plan. This may take a few seconds."
+    },
+    "mealTypes": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "snack": "Snack",
+      "dinner": "Dinner"
+    }
+  },
+  "workout": {
+    "title": "Workout",
+    "exerciseOf": "Exercise {{current}} of {{total}}",
+    "setOf": "Set {{current}} of {{total}} · {{reps}} reps",
+    "exercisesAndSets": "{{exercises}} exercises · {{sets}} total sets",
+    "completedSet": "Set completed",
+    "rest": "REST",
+    "skipRest": "Skip rest",
+    "nextSet": "Next: set {{current}} of {{total}}",
+    "completed": "Workout complete!",
+    "completedBody": "{{exercises}} exercises · {{sets}} sets · {{title}}",
+    "abortTitle": "Leave workout",
+    "abortBody": "Are you sure you want to leave? The current session progress won't be saved.",
+    "keepGoing": "Keep going",
+    "exit": "Leave",
+    "interrupted": "Session interrupted.",
+    "noWorkoutToday": "There's no workout ready for today.",
+    "noExercises": "This workout has no exercises loaded.",
+    "loadFailed": "Couldn't load the workout.",
+    "noData": "No data"
+  },
+  "nutrition": {
+    "title": "Nutrition",
+    "todayMeals": "Today's meals",
+    "macrosToday": "Today's macros",
+    "kcal": "kcal",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fats": "Fats",
+    "viewShoppingList": "Weekly shopping list",
+    "logMealOutsidePlan": "Log a meal outside the plan",
+    "noPlan": "No nutrition plan for today yet.",
+    "loadFailed": "Couldn't load your nutrition.",
+    "viewRecipe": "View recipe",
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "noIngredients": "This recipe has no ingredients yet.",
+    "vegan": "Vegan",
+    "glutenFree": "Gluten-free",
+    "min": "min",
+    "recipeNotFound": "This recipe was not found in the catalog.",
+    "recipeLoadFailed": "Couldn't load the recipe."
+  },
+  "profile": {
+    "streakDays": "Day streak",
+    "consistency": "Consistency",
+    "workout": "Workout",
+    "nutrition": "Nutrition",
+    "habits": "Habits",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "subscription": "Subscription",
+    "language": "Language",
+    "languageHelper": "Change the app language",
+    "logout": "Sign out",
+    "version": "Version {{version}}"
+  },
+  "coach": {
+    "tabLabel": "Coach",
+    "openCoach": "Open coach"
   }
 }

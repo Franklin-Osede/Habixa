@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { Brand } from '../../../constants/theme';
 import api from '../../../src/services/api.client';
 import {
   WorkoutSessionPlan,
@@ -58,25 +60,16 @@ type ApiTodayDetailedReady = {
   };
 };
 
-const COLORS = {
-  bgDark: '#15241a',
-  surface: 'rgba(255,255,255,0.05)',
-  brand: '#0df259',
-  textPrimary: '#fff',
-  textMuted: 'rgba(255,255,255,0.6)',
-  danger: '#ff4444',
-  warning: '#f5a524',
-};
-
 export default function WorkoutSessionScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ id: string }>();
   const [plan, setPlan] = useState<WorkoutSessionPlan | null>(null);
   const [planWeekId, setPlanWeekId] = useState<string | null>(null);
   const [workoutActivityId, setWorkoutActivityId] = useState<string | null>(
     null,
   );
-  const [workoutTitle, setWorkoutTitle] = useState<string>('Entrenamiento');
+  const [workoutTitle, setWorkoutTitle] = useState<string>(t('workout.title'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -87,26 +80,35 @@ export default function WorkoutSessionScreen() {
   const { playCue } = useVoiceCue();
 
   // Fetch the day plan and shape it for the state machine.
+  // The route [id] is the today's-workout id; we fetch /today/detailed
+  // and verify the workout we get back matches. If not (stale link or
+  // user navigated to a different day's workout), we still try today.
   useEffect(() => {
     let cancelled = false;
     const fetchPlan = async () => {
       try {
         setLoading(true);
+        setError('');
         const res = await api.get<ApiTodayDetailedReady>(
           '/planning/lifestyle/today/detailed',
         );
         if (cancelled) return;
-        const workout = res.data?.day?.workout;
-        if (!workout || res.data.status !== 'READY') {
-          setError('No hay un entrenamiento listo para hoy.');
+        if (res.data?.status !== 'READY') {
+          setError(t('workout.noWorkoutToday'));
           return;
         }
-        const flatExercises = workout.blocks
-          .flatMap((b) => b.exercises)
-          .filter((item) => !!item.exercise && !!item.sets);
+        const workout = res.data.day?.workout;
+        if (!workout || !workout.id) {
+          setError(t('workout.noWorkoutToday'));
+          return;
+        }
+
+        const flatExercises = (workout.blocks ?? [])
+          .flatMap((b) => b?.exercises ?? [])
+          .filter((item) => item && !!item.exercise && !!item.sets);
 
         if (flatExercises.length === 0) {
-          setError('Este entrenamiento no tiene ejercicios cargados.');
+          setError(t('workout.noExercises'));
           return;
         }
 
@@ -127,7 +129,7 @@ export default function WorkoutSessionScreen() {
       } catch (err) {
         if (cancelled) return;
         console.error('Failed to load workout', err);
-        setError('No se pudo cargar el entrenamiento.');
+        setError(t('workout.loadFailed'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -136,7 +138,7 @@ export default function WorkoutSessionScreen() {
     return () => {
       cancelled = true;
     };
-  }, [params.id]);
+  }, [params.id, t]);
 
   // Tick the rest timer once a second when resting.
   useEffect(() => {
@@ -147,11 +149,6 @@ export default function WorkoutSessionScreen() {
     return () => clearInterval(interval);
   }, [state.kind]);
 
-  // Voice cues fired on state-machine transitions:
-  //  - "intro" at the start of every exercise (setIndex === 0)
-  //  - "rest_start" whenever we land in the resting state
-  // The hook is graceful by default — a missing cue or audio error
-  // never breaks the visual session flow.
   useEffect(() => {
     if (!plan) return;
     if (state.kind === 'exercising' && state.setIndex === 0) {
@@ -167,17 +164,12 @@ export default function WorkoutSessionScreen() {
   }, [
     plan,
     state.kind,
-    // exerciseIndex / setIndex / nextSetIndex change shape per state
-    // variant; pulling them out via discriminated access keeps the
-    // dependency list narrow enough that idle / completed transitions
-    // don't replay cues.
     state.kind === 'exercising' ? state.exerciseIndex : null,
     state.kind === 'exercising' ? state.setIndex : null,
     state.kind === 'resting' ? state.exerciseIndex : null,
     playCue,
   ]);
 
-  // Mark the workout completed in the backend once we hit the completed state.
   useEffect(() => {
     if (state.kind !== 'completed' || !workoutActivityId || !planWeekId) return;
     void api
@@ -193,27 +185,23 @@ export default function WorkoutSessionScreen() {
   }, [state.kind, workoutActivityId, planWeekId, workoutTitle]);
 
   const onAbort = () => {
-    Alert.alert(
-      'Salir del entrenamiento',
-      '¿Seguro que quieres salir? El progreso de la sesión actual no se guardará.',
-      [
-        { text: 'Seguir entrenando', style: 'cancel' },
-        {
-          text: 'Salir',
-          style: 'destructive',
-          onPress: () => {
-            dispatch({ type: 'ABORT', nowMs: Date.now() });
-            router.back();
-          },
+    Alert.alert(t('workout.abortTitle'), t('workout.abortBody'), [
+      { text: t('workout.keepGoing'), style: 'cancel' },
+      {
+        text: t('workout.exit'),
+        style: 'destructive',
+        onPress: () => {
+          dispatch({ type: 'ABORT', nowMs: Date.now() });
+          router.back();
         },
-      ],
-    );
+      },
+    ]);
   };
 
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.brand} />
+        <ActivityIndicator size="large" color={Brand.accent} />
       </View>
     );
   }
@@ -221,17 +209,23 @@ export default function WorkoutSessionScreen() {
   if (error || !plan) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Ionicons name="alert-circle-outline" size={48} color={COLORS.danger} />
-        <Text style={styles.errorText}>{error || 'Sin datos'}</Text>
+        <Ionicons name="alert-circle-outline" size={48} color={Brand.danger} />
+        <Text style={styles.errorText}>{error || t('workout.noData')}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
-          <Text style={styles.retryBtnText}>Volver</Text>
+          <Text style={styles.retryBtnText}>{t('common.back')}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   if (state.kind === 'idle') {
-    return <IdleStartScreen plan={plan} onStart={() => dispatch({ type: 'START', nowMs: Date.now() })} onAbort={() => router.back()} />;
+    return (
+      <IdleStartScreen
+        plan={plan}
+        onStart={() => dispatch({ type: 'START', nowMs: Date.now() })}
+        onAbort={() => router.back()}
+      />
+    );
   }
 
   if (state.kind === 'completed') {
@@ -239,15 +233,13 @@ export default function WorkoutSessionScreen() {
   }
 
   if (state.kind === 'aborted') {
-    // ABORT is dispatched and we navigate away — this branch is mostly defensive.
     return (
       <View style={[styles.container, styles.center]}>
-        <Text style={styles.bodyMuted}>Sesión interrumpida.</Text>
+        <Text style={styles.bodyMuted}>{t('workout.interrupted')}</Text>
       </View>
     );
   }
 
-  // exercising or resting share the same shell
   return (
     <ActiveSessionScreen
       plan={plan}
@@ -267,12 +259,13 @@ function IdleStartScreen({
   onStart: () => void;
   onAbort: () => void;
 }) {
+  const { t } = useTranslation();
   const total = planTotalSets(plan);
   return (
     <View style={styles.container}>
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={onAbort}>
-          <Ionicons name="close" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="close" size={28} color={Brand.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {plan.title}
@@ -281,7 +274,10 @@ function IdleStartScreen({
       </View>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.lead}>
-          {plan.exercises.length} ejercicios · {total} series totales
+          {t('workout.exercisesAndSets', {
+            exercises: plan.exercises.length,
+            sets: total,
+          })}
         </Text>
         {plan.exercises.map((ex, idx) => (
           <View key={`${ex.exerciseId}-${idx}`} style={styles.previewRow}>
@@ -289,7 +285,7 @@ function IdleStartScreen({
             <View style={{ flex: 1 }}>
               <Text style={styles.previewName}>{ex.name}</Text>
               <Text style={styles.previewMeta}>
-                {ex.sets} series × {ex.reps} · descanso {ex.restSec}s
+                {ex.sets} × {ex.reps} · {ex.restSec}s
               </Text>
             </View>
           </View>
@@ -297,8 +293,8 @@ function IdleStartScreen({
       </ScrollView>
       <View style={styles.footer}>
         <TouchableOpacity style={styles.primaryBtn} onPress={onStart}>
-          <Ionicons name="play" size={20} color={COLORS.bgDark} />
-          <Text style={styles.primaryBtnText}>Empezar</Text>
+          <Ionicons name="play" size={20} color={Brand.bgDark} />
+          <Text style={styles.primaryBtnText}>{t('common.start')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -316,6 +312,7 @@ function ActiveSessionScreen({
   dispatch: React.Dispatch<WorkoutSessionEvent>;
   onAbort: () => void;
 }) {
+  const { t } = useTranslation();
   const total = planTotalSets(plan);
   const completed = planCompletedSets(plan, state);
   const exerciseIndex =
@@ -329,7 +326,7 @@ function ActiveSessionScreen({
     <View style={styles.container}>
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={onAbort}>
-          <Ionicons name="close" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="close" size={28} color={Brand.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {plan.title}
@@ -345,43 +342,57 @@ function ActiveSessionScreen({
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.exerciseLabel}>
-          Ejercicio {exerciseIndex + 1} de {plan.exercises.length}
+          {t('workout.exerciseOf', {
+            current: exerciseIndex + 1,
+            total: plan.exercises.length,
+          })}
         </Text>
         <Text style={styles.exerciseTitle}>{exercise.name}</Text>
         <Text style={styles.exerciseMeta}>
-          Serie {setIndex + 1} de {exercise.sets} · {exercise.reps} reps
+          {t('workout.setOf', {
+            current: setIndex + 1,
+            total: exercise.sets,
+            reps: exercise.reps,
+          })}
         </Text>
       </ScrollView>
 
       {state.kind === 'exercising' ? (
         <View style={styles.footer}>
-          <Text style={styles.footerHint}>
-            Cuando completes la serie, márcala
-          </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() =>
               dispatch({ type: 'COMPLETE_SET', nowMs: Date.now() })
             }
           >
-            <Ionicons name="checkmark" size={20} color={COLORS.bgDark} />
-            <Text style={styles.primaryBtnText}>Serie completada</Text>
+            <Ionicons name="checkmark" size={20} color={Brand.bgDark} />
+            <Text style={styles.primaryBtnText}>
+              {t('workout.completedSet')}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.footer}>
-          <Text style={styles.restLabel}>DESCANSO</Text>
+          <Text style={styles.restLabel}>{t('workout.rest')}</Text>
           <Text style={styles.restCountdown}>{state.restRemainingSec}s</Text>
           <Text style={styles.footerHint}>
-            Próxima: serie {state.nextSetIndex + 1} de{' '}
-            {plan.exercises[state.exerciseIndex].sets}
+            {t('workout.nextSet', {
+              current: state.nextSetIndex + 1,
+              total: plan.exercises[state.exerciseIndex].sets,
+            })}
           </Text>
           <TouchableOpacity
             style={styles.secondaryBtn}
             onPress={() => dispatch({ type: 'SKIP_REST', nowMs: Date.now() })}
           >
-            <Ionicons name="play-skip-forward" size={18} color={COLORS.brand} />
-            <Text style={styles.secondaryBtnText}>Saltar descanso</Text>
+            <Ionicons
+              name="play-skip-forward"
+              size={18}
+              color={Brand.accent}
+            />
+            <Text style={styles.secondaryBtnText}>
+              {t('workout.skipRest')}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -396,25 +407,34 @@ function CompletedScreen({
   plan: WorkoutSessionPlan;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const total = planTotalSets(plan);
   return (
     <View style={[styles.container, styles.center]}>
-      <Ionicons name="trophy-outline" size={72} color={COLORS.brand} />
-      <Text style={styles.celebrateTitle}>¡Entreno completado!</Text>
+      <Ionicons name="trophy-outline" size={72} color={Brand.accent} />
+      <Text style={styles.celebrateTitle}>{t('workout.completed')}</Text>
       <Text style={styles.bodyMuted}>
-        {plan.exercises.length} ejercicios · {total} series ·{' '}
-        {plan.title}
+        {t('workout.completedBody', {
+          exercises: plan.exercises.length,
+          sets: total,
+          title: plan.title,
+        })}
       </Text>
       <TouchableOpacity style={styles.primaryBtn} onPress={onClose}>
-        <Text style={styles.primaryBtnText}>Cerrar</Text>
+        <Text style={styles.primaryBtnText}>{t('common.close')}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bgDark },
-  center: { justifyContent: 'center', alignItems: 'center', padding: 24, gap: 12 },
+  container: { flex: 1, backgroundColor: Brand.bgDark },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 12,
+  },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -424,7 +444,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   headerTitle: {
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
@@ -432,7 +452,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   headerProgress: {
-    color: COLORS.brand,
+    color: Brand.accent,
     fontSize: 14,
     fontWeight: '700',
     minWidth: 28,
@@ -445,9 +465,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: COLORS.brand },
+  progressFill: { height: '100%', backgroundColor: Brand.accent },
   scroll: { padding: 24, flexGrow: 1 },
-  lead: { color: COLORS.textMuted, fontSize: 14, marginBottom: 18 },
+  lead: { color: Brand.textMuted, fontSize: 14, marginBottom: 18 },
   previewRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -457,18 +477,18 @@ const styles = StyleSheet.create({
   },
   previewIndex: {
     width: 28,
-    color: COLORS.brand,
+    color: Brand.accent,
     fontSize: 16,
     fontWeight: '700',
   },
   previewName: {
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
-  previewMeta: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  previewMeta: { color: Brand.textMuted, fontSize: 12, marginTop: 2 },
   exerciseLabel: {
-    color: COLORS.brand,
+    color: Brand.accent,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.5,
@@ -476,12 +496,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   exerciseTitle: {
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     fontSize: 28,
     fontWeight: 'bold',
   },
   exerciseMeta: {
-    color: COLORS.textMuted,
+    color: Brand.textMuted,
     fontSize: 16,
     marginTop: 8,
   },
@@ -491,9 +511,9 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: 'center',
   },
-  footerHint: { color: COLORS.textMuted, fontSize: 13 },
+  footerHint: { color: Brand.textMuted, fontSize: 13 },
   primaryBtn: {
-    backgroundColor: COLORS.brand,
+    backgroundColor: Brand.accent,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -504,7 +524,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryBtnText: {
-    color: COLORS.bgDark,
+    color: Brand.bgDark,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -516,42 +536,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: COLORS.brand,
+    borderColor: Brand.accent,
   },
   secondaryBtnText: {
-    color: COLORS.brand,
+    color: Brand.accent,
     fontWeight: 'bold',
   },
   restLabel: {
-    color: COLORS.warning,
+    color: Brand.warning,
     fontSize: 12,
     letterSpacing: 2,
     fontWeight: '700',
   },
   restCountdown: {
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     fontSize: 64,
     fontWeight: 'bold',
   },
   celebrateTitle: {
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     fontSize: 26,
     fontWeight: 'bold',
     marginTop: 8,
   },
-  bodyMuted: { color: COLORS.textMuted, fontSize: 14, textAlign: 'center' },
+  bodyMuted: { color: Brand.textMuted, fontSize: 14, textAlign: 'center' },
   errorText: {
-    color: COLORS.danger,
+    color: Brand.danger,
     fontSize: 16,
     textAlign: 'center',
     marginTop: 12,
   },
   retryBtn: {
-    backgroundColor: COLORS.brand,
+    backgroundColor: Brand.accent,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     marginTop: 12,
   },
-  retryBtnText: { color: COLORS.bgDark, fontWeight: 'bold' },
+  retryBtnText: { color: Brand.bgDark, fontWeight: 'bold' },
 });

@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { Brand } from '../../../constants/theme';
 import api from '../../../src/services/api.client';
 
 type HydratedIngredient = {
@@ -22,7 +24,7 @@ type HydratedIngredient = {
     category: string;
     caloriesPer100g: number;
     isVegan: boolean;
-  };
+  } | null;
 };
 
 type Recipe = {
@@ -40,18 +42,10 @@ type Recipe = {
   ingredients: HydratedIngredient[];
 };
 
-const COLORS = {
-  bgDark: '#15241a',
-  surface: 'rgba(255,255,255,0.05)',
-  brand: '#0df259',
-  textPrimary: '#fff',
-  textMuted: 'rgba(255,255,255,0.6)',
-  danger: '#ff4444',
-};
-
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,9 +60,9 @@ export default function RecipeDetailScreen() {
       } catch (err: any) {
         if (cancelled) return;
         if (err.response?.status === 404) {
-          setError('Esta receta no se encuentra en el catálogo.');
+          setError(t('nutrition.recipeNotFound'));
         } else {
-          setError('No se pudo cargar la receta.');
+          setError(t('nutrition.recipeLoadFailed'));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -78,12 +72,19 @@ export default function RecipeDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, t]);
+
+  // Filter out broken FK joins so a single orphaned ingredient row
+  // doesn't take down the whole detail screen.
+  const validIngredients = (recipe?.ingredients ?? []).filter(
+    (item): item is HydratedIngredient & { ingredient: NonNullable<HydratedIngredient['ingredient']> } =>
+      !!item && !!item.ingredient && !!item.ingredient.id,
+  );
 
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color={COLORS.brand} />
+        <ActivityIndicator size="large" color={Brand.accent} />
       </View>
     );
   }
@@ -91,10 +92,12 @@ export default function RecipeDetailScreen() {
   if (error || !recipe) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Ionicons name="alert-circle-outline" size={48} color={COLORS.danger} />
-        <Text style={styles.errorText}>{error || 'Receta no encontrada'}</Text>
+        <Ionicons name="alert-circle-outline" size={48} color={Brand.danger} />
+        <Text style={styles.errorText}>
+          {error || t('nutrition.recipeNotFound')}
+        </Text>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Volver</Text>
+          <Text style={styles.backBtnText}>{t('common.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -107,7 +110,7 @@ export default function RecipeDetailScreen() {
           style={styles.backChevron}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={Brand.textPrimary} />
         </TouchableOpacity>
 
         {recipe.imageUrl ? (
@@ -117,7 +120,7 @@ export default function RecipeDetailScreen() {
             <Ionicons
               name="restaurant-outline"
               size={64}
-              color={COLORS.brand}
+              color={Brand.accent}
             />
           </View>
         )}
@@ -125,29 +128,45 @@ export default function RecipeDetailScreen() {
         <Text style={styles.title}>{recipe.title}</Text>
 
         <View style={styles.metaRow}>
-          <MetaPill icon="time-outline" label={`${recipe.prepTimeMin} min`} />
-          <MetaPill icon="flame-outline" label={`${recipe.calories} kcal`} />
+          <MetaPill
+            icon="time-outline"
+            label={`${recipe.prepTimeMin} ${t('nutrition.min')}`}
+          />
+          <MetaPill
+            icon="flame-outline"
+            label={`${recipe.calories} ${t('nutrition.kcal')}`}
+          />
           {recipe.isVegan ? (
-            <MetaPill icon="leaf-outline" label="Vegano" />
+            <MetaPill icon="leaf-outline" label={t('nutrition.vegan')} />
           ) : null}
           {recipe.isGlutenFree ? (
-            <MetaPill icon="checkmark-circle-outline" label="Sin gluten" />
+            <MetaPill
+              icon="checkmark-circle-outline"
+              label={t('nutrition.glutenFree')}
+            />
           ) : null}
         </View>
 
         <View style={styles.macroRow}>
-          <MacroCell label="Proteína" value={`${recipe.protein} g`} />
-          <MacroCell label="Carbs" value={`${recipe.carbs} g`} />
-          <MacroCell label="Grasas" value={`${recipe.fats} g`} />
+          <MacroCell
+            label={t('nutrition.protein')}
+            value={`${recipe.protein} g`}
+          />
+          <MacroCell
+            label={t('nutrition.carbs')}
+            value={`${recipe.carbs} g`}
+          />
+          <MacroCell
+            label={t('nutrition.fats')}
+            value={`${recipe.fats} g`}
+          />
         </View>
 
-        <Section title="Ingredientes">
-          {recipe.ingredients.length === 0 ? (
-            <Text style={styles.bodyMuted}>
-              Esta receta aún no tiene ingredientes registrados.
-            </Text>
+        <Section title={t('nutrition.ingredients')}>
+          {validIngredients.length === 0 ? (
+            <Text style={styles.bodyMuted}>{t('nutrition.noIngredients')}</Text>
           ) : (
-            recipe.ingredients.map((item, idx) => (
+            validIngredients.map((item, idx) => (
               <View
                 key={`${item.ingredient.id}-${idx}`}
                 style={styles.ingredientRow}
@@ -158,7 +177,7 @@ export default function RecipeDetailScreen() {
                   </Text>
                   <Text style={styles.ingredientMeta}>
                     {item.ingredient.category}
-                    {item.ingredient.isVegan ? ' · Vegano' : ''}
+                    {item.ingredient.isVegan ? ` · ${t('nutrition.vegan')}` : ''}
                   </Text>
                 </View>
                 <Text style={styles.ingredientQty}>
@@ -169,7 +188,7 @@ export default function RecipeDetailScreen() {
           )}
         </Section>
 
-        <Section title="Preparación">
+        <Section title={t('nutrition.instructions')}>
           <Text style={styles.body}>{recipe.instructions}</Text>
         </Section>
 
@@ -177,9 +196,9 @@ export default function RecipeDetailScreen() {
           style={styles.shoppingBtn}
           onPress={() => router.push('/nutrition/shopping-list')}
         >
-          <Ionicons name="cart-outline" size={20} color={COLORS.bgDark} />
+          <Ionicons name="cart-outline" size={20} color={Brand.bgDark} />
           <Text style={styles.shoppingBtnText}>
-            Ver lista de la compra de la semana
+            {t('nutrition.viewShoppingList')}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -211,7 +230,7 @@ function MetaPill({
 }) {
   return (
     <View style={styles.metaPill}>
-      <Ionicons name={icon} size={14} color={COLORS.brand} />
+      <Ionicons name={icon} size={14} color={Brand.accent} />
       <Text style={styles.metaPillText}>{label}</Text>
     </View>
   );
@@ -233,7 +252,7 @@ function formatQty(quantity: number, unit: string): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bgDark },
+  container: { flex: 1, backgroundColor: Brand.bgDark },
   center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   scroll: { paddingBottom: 64 },
   backChevron: {
@@ -248,12 +267,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cover: { width: '100%', height: 220, backgroundColor: COLORS.surface },
+  cover: { width: '100%', height: 220, backgroundColor: Brand.surface },
   coverFallback: { justifyContent: 'center', alignItems: 'center' },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -271,9 +290,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: COLORS.surface,
+    backgroundColor: Brand.surface,
   },
-  metaPillText: { color: COLORS.textPrimary, fontSize: 12, fontWeight: '600' },
+  metaPillText: { color: Brand.textPrimary, fontSize: 12, fontWeight: '600' },
   macroRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -282,16 +301,16 @@ const styles = StyleSheet.create({
   },
   macroCell: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: Brand.surface,
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
   },
-  macroValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
-  macroLabel: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  macroValue: { color: Brand.textPrimary, fontSize: 18, fontWeight: 'bold' },
+  macroLabel: { color: Brand.textMuted, fontSize: 12, marginTop: 2 },
   section: { paddingHorizontal: 20, marginTop: 24 },
   sectionTitle: {
-    color: COLORS.brand,
+    color: Brand.accent,
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,
@@ -306,38 +325,38 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   ingredientName: {
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     fontSize: 15,
     fontWeight: '600',
   },
-  ingredientMeta: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
-  ingredientQty: { color: COLORS.brand, fontSize: 15, fontWeight: 'bold' },
-  body: { color: COLORS.textPrimary, fontSize: 15, lineHeight: 22 },
-  bodyMuted: { color: COLORS.textMuted, fontSize: 14 },
+  ingredientMeta: { color: Brand.textMuted, fontSize: 12, marginTop: 2 },
+  ingredientQty: { color: Brand.accent, fontSize: 15, fontWeight: 'bold' },
+  body: { color: Brand.textPrimary, fontSize: 15, lineHeight: 22 },
+  bodyMuted: { color: Brand.textMuted, fontSize: 14 },
   shoppingBtn: {
     marginTop: 32,
     marginHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: COLORS.brand,
+    backgroundColor: Brand.accent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  shoppingBtnText: { color: COLORS.bgDark, fontWeight: 'bold', fontSize: 14 },
+  shoppingBtnText: { color: Brand.bgDark, fontWeight: 'bold', fontSize: 14 },
   errorText: {
-    color: COLORS.danger,
+    color: Brand.danger,
     fontSize: 16,
     textAlign: 'center',
     marginTop: 12,
   },
   backBtn: {
-    backgroundColor: COLORS.brand,
+    backgroundColor: Brand.accent,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     marginTop: 12,
   },
-  backBtnText: { color: COLORS.bgDark, fontWeight: 'bold' },
+  backBtnText: { color: Brand.bgDark, fontWeight: 'bold' },
 });

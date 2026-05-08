@@ -1,49 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
+
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+
+import { Brand } from '../../../constants/theme';
 import api from '../../services/api.client';
 
-const SKIP_REASONS: Array<{ id: string; label: string }> = [
-  { id: 'illness', label: 'Estoy enfermo' },
-  { id: 'time', label: 'No tengo tiempo hoy' },
-  { id: 'mood', label: 'No me siento con ánimo' },
-  { id: 'travel', label: 'Estoy de viaje' },
-  { id: 'injury', label: 'Lesión / molestia' },
-  { id: 'other', label: 'Otro' },
-];
-
-function promptSkipReason(
-  activityLabel: string,
-  onPick: (reason: string) => void,
-) {
-  Alert.alert(
-    `Saltar: ${activityLabel}`,
-    'Esto no rompe tu racha pero cuenta como no completado. ¿Por qué saltas?',
-    [
-      ...SKIP_REASONS.map((r) => ({
-        text: r.label,
-        onPress: () => onPick(r.id),
-      })),
-      { text: 'Cancelar', style: 'cancel' as const },
-    ],
-  );
-}
-
-const MEAL_TYPE_LABELS: Record<string, string> = {
-  breakfast: 'Desayuno',
-  lunch: 'Almuerzo',
-  snack: 'Snack',
-  dinner: 'Cena',
-};
+const SKIP_REASON_KEYS = [
+  'illness',
+  'time',
+  'mood',
+  'travel',
+  'injury',
+  'other',
+] as const;
 
 type HydratedMeal = {
   id: string;
@@ -82,16 +54,8 @@ type LifestyleTodayResponse =
       }>;
     };
 
-const COLORS = {
-  bgDark: '#15241a',
-  surface: 'rgba(255,255,255,0.05)',
-  brand: '#0df259',
-  textPrimary: '#fff',
-  textMuted: 'rgba(255,255,255,0.6)',
-  danger: '#ff4444',
-};
-
 export function TodayPlanDashboard() {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LifestyleTodayResponse | null>(null);
   const [error, setError] = useState('');
@@ -106,7 +70,7 @@ export function TodayPlanDashboard() {
       setData(res.data);
     } catch (err) {
       console.error('Failed to fetch today plan', err);
-      setError('No se pudo cargar el plan de hoy.');
+      setError(t('plan.errors.todayLoad'));
     } finally {
       setLoading(false);
     }
@@ -114,60 +78,113 @@ export function TodayPlanDashboard() {
 
   useEffect(() => {
     void fetchTodayPlan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
+
+  const renderBody = () => {
+    if (loading) return <CenteredSpinner />;
+    if (error) return <ErrorState message={error} onRetry={fetchTodayPlan} />;
+    if (!data) return null;
+
+    switch (data.status) {
+      case 'NOT_STARTED':
+        return <NotStartedState />;
+      case 'GENERATING':
+        return <GeneratingState progress={data.progress} />;
+      case 'FAILED':
+        return (
+          <ErrorState
+            message={data.errorMessage ?? t('plan.errors.generic')}
+            onRetry={fetchTodayPlan}
+          />
+        );
+      case 'READY':
+        return <ReadyState data={data} onRefresh={fetchTodayPlan} />;
+    }
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Brand.bgDark }}>
+      <UserStatsHeader />
+      {renderBody()}
+    </View>
+  );
+}
+
+type IdentityMe = {
+  id: string;
+  email: string;
+  level: number;
+  xp: number;
+  currentStreak: number;
+  currentDayIndex: number;
+  gems: number;
+};
+
+function UserStatsHeader() {
+  const [me, setMe] = useState<IdentityMe | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<IdentityMe>('/identity/me')
+      .then((res) => {
+        if (!cancelled) setMe(res.data);
+      })
+      .catch(() => {
+        /* silent — header is decorative */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (loading) return <CenteredSpinner />;
+  if (!me) return null;
 
-  if (error) return <ErrorState message={error} onRetry={fetchTodayPlan} />;
-
-  if (!data) return null;
-
-  switch (data.status) {
-    case 'NOT_STARTED':
-      return <NotStartedState />;
-    case 'GENERATING':
-      return <GeneratingState progress={data.progress} />;
-    case 'FAILED':
-      return (
-        <ErrorState
-          message={data.errorMessage ?? 'No pudimos generar tu plan.'}
-          onRetry={fetchTodayPlan}
-        />
-      );
-    case 'READY':
-      return <ReadyState data={data} onRefresh={fetchTodayPlan} />;
-  }
+  return (
+    <View style={styles.statsHeader}>
+      <View style={styles.statsCell}>
+        <Ionicons name="flame" size={16} color={Brand.accent} />
+        <Text style={styles.statsValue}>{me.currentStreak}</Text>
+      </View>
+      <View style={styles.statsCell}>
+        <Text style={styles.statsValue}>L{me.level}</Text>
+        <Text style={styles.statsMuted}>{me.xp.toLocaleString()} XP</Text>
+      </View>
+      <View style={styles.statsCell}>
+        <Ionicons name="diamond-outline" size={14} color={Brand.accent} />
+        <Text style={styles.statsValue}>{me.gems}</Text>
+      </View>
+    </View>
+  );
 }
 
 function CenteredSpinner() {
   return (
     <View style={styles.centerContainer}>
-      <ActivityIndicator size="large" color={COLORS.brand} />
+      <ActivityIndicator size="large" color={Brand.accent} />
     </View>
   );
 }
 
 function NotStartedState() {
+  const { t } = useTranslation();
   return (
     <View style={styles.centerContainer}>
-      <Ionicons name="rocket-outline" size={48} color={COLORS.brand} />
-      <Text style={styles.headerTitle}>Configura tu plan</Text>
-      <Text style={styles.bodyMuted}>
-        Aún no has generado tu primer plan. Completa el onboarding para empezar.
-      </Text>
+      <Ionicons name="rocket-outline" size={48} color={Brand.accent} />
+      <Text style={styles.headerTitle}>{t('plan.states.configure')}</Text>
+      <Text style={styles.bodyMuted}>{t('plan.states.configureBody')}</Text>
     </View>
   );
 }
 
 function GeneratingState({ progress }: { progress: number }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.centerContainer}>
-      <ActivityIndicator size="large" color={COLORS.brand} />
-      <Text style={styles.headerTitle}>Generando tu plan…</Text>
-      <Text style={styles.bodyMuted}>
-        Estamos creando tu plan personalizado. Esto puede tardar unos
-        segundos.
-      </Text>
+      <ActivityIndicator size="large" color={Brand.accent} />
+      <Text style={styles.headerTitle}>{t('plan.states.generating')}</Text>
+      <Text style={styles.bodyMuted}>{t('plan.states.generatingBody')}</Text>
       <Text style={styles.bodyMuted}>{progress}%</Text>
     </View>
   );
@@ -180,12 +197,13 @@ function ErrorState({
   message: string;
   onRetry: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.centerContainer}>
-      <Ionicons name="alert-circle-outline" size={48} color={COLORS.danger} />
+      <Ionicons name="alert-circle-outline" size={48} color={Brand.danger} />
       <Text style={styles.errorText}>{message}</Text>
       <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-        <Text style={styles.retryText}>Reintentar</Text>
+        <Text style={styles.retryText}>{t('common.retry')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -199,12 +217,13 @@ function ReadyState({
   onRefresh: () => void;
 }) {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { day, completion, planWeekId, date } = data;
   const meals = day?.nutrition?.meals ?? [];
   const habits = day?.habits ?? [];
   const workout = day?.workout;
 
-  const isCompleted = (activityId: string | undefined) =>
+  const isCompleted = (activityId: string | undefined | null) =>
     Boolean(
       activityId && completion.some((item) => item.activityId === activityId),
     );
@@ -225,6 +244,23 @@ function ReadyState({
     } catch (err) {
       console.error('Error marking completed', err);
     }
+  };
+
+  const promptSkipReason = (
+    activityLabel: string,
+    onPick: (reason: string) => void,
+  ) => {
+    Alert.alert(
+      t('plan.skipReasonTitle', { label: activityLabel }),
+      t('plan.skipReasonBody'),
+      [
+        ...SKIP_REASON_KEYS.map((id) => ({
+          text: t(`plan.skipReasons.${id}`),
+          onPress: () => onPick(id),
+        })),
+        { text: t('common.cancel'), style: 'cancel' as const },
+      ],
+    );
   };
 
   const skipActivity = (
@@ -252,62 +288,59 @@ function ReadyState({
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.dateLabel}>{formatHumanDate(date)}</Text>
-        <Text style={styles.headerTitle}>Tu Plan de Hoy</Text>
+        <Text style={styles.dateLabel}>
+          {formatHumanDate(date, i18n.language)}
+        </Text>
+        <Text style={styles.headerTitle}>{t('plan.todayTitle')}</Text>
 
-        {workout && (
+        {workout && workout.id ? (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Ionicons
                 name="barbell-outline"
                 size={24}
-                color={COLORS.brand}
+                color={Brand.accent}
               />
-              <Text style={styles.cardTitle}>Entrenamiento</Text>
-            </View>
-            <Text style={styles.itemTitle}>
-              {workout.title ?? 'Entrenamiento del día'}
-            </Text>
-            <View style={styles.actionRow}>
+              <Text style={styles.cardTitle}>{t('plan.workout')}</Text>
               <TouchableOpacity
-                style={[
-                  styles.completeBtn,
-                  styles.completeBtnFlex,
-                  isCompleted(workout.id) && styles.completedBtn,
-                ]}
-                onPress={() =>
-                  router.push(
-                    `/workouts/run/${workout.id ?? 'workout_1'}` as never,
-                  )
-                }
-              >
-                <Text style={styles.completeBtnText}>
-                  {isCompleted(workout.id)
-                    ? 'Repetir entreno'
-                    : 'Comenzar entreno'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.skipBtn}
+                style={styles.moreBtn}
                 onPress={() =>
                   skipActivity(
-                    workout.id ?? 'workout_1',
+                    workout.id,
                     'workout',
-                    workout.title ?? 'Entrenamiento',
-                    workout.title ?? 'Entrenamiento',
+                    workout.title ?? t('plan.workout'),
+                    workout.title ?? t('plan.workout'),
                   )
                 }
+                accessibilityLabel={t('common.skip')}
               >
                 <Ionicons
                   name="ellipsis-horizontal"
-                  size={18}
-                  color={COLORS.textMuted}
+                  size={20}
+                  color={Brand.textMuted}
                 />
-                <Text style={styles.skipBtnText}>Saltar</Text>
               </TouchableOpacity>
             </View>
+            <Text style={styles.itemTitle}>
+              {workout.title ?? t('plan.workoutOfTheDay')}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.completeBtn,
+                isCompleted(workout.id) && styles.completedBtn,
+              ]}
+              onPress={() =>
+                router.push(`/workouts/run/${workout.id}` as never)
+              }
+            >
+              <Text style={styles.completeBtnText}>
+                {isCompleted(workout.id)
+                  ? t('plan.repeatWorkout')
+                  : t('plan.startWorkout')}
+              </Text>
+            </TouchableOpacity>
           </View>
-        )}
+        ) : null}
 
         {meals.length > 0 && (
           <View style={styles.card}>
@@ -315,14 +348,16 @@ function ReadyState({
               <Ionicons
                 name="restaurant-outline"
                 size={24}
-                color={COLORS.brand}
+                color={Brand.accent}
               />
-              <Text style={styles.cardTitle}>Nutrición</Text>
+              <Text style={styles.cardTitle}>{t('plan.nutrition')}</Text>
             </View>
             {meals.map((meal, index) => {
-              const mealLabel =
-                MEAL_TYPE_LABELS[meal.mealType] ?? meal.mealType;
-              const recipeTitle = meal.recipe?.title ?? 'Receta no disponible';
+              const mealLabel = t(
+                `plan.mealTypes.${meal.mealType}`,
+                meal.mealType,
+              );
+              const recipeTitle = meal.recipe?.title ?? '—';
               return (
                 <View key={meal.id ?? index} style={styles.mealItem}>
                   <TouchableOpacity
@@ -346,7 +381,8 @@ function ReadyState({
                     <Text style={styles.itemTitle}>{recipeTitle}</Text>
                     {meal.recipe ? (
                       <Text style={styles.mealMeta}>
-                        {meal.recipe.calories} kcal · Ver ingredientes ›
+                        {meal.recipe.calories} {t('nutrition.kcal')} ·{' '}
+                        {t('nutrition.viewRecipe')} ›
                       </Text>
                     ) : null}
                   </TouchableOpacity>
@@ -367,7 +403,7 @@ function ReadyState({
                     <Ionicons
                       name="checkmark-outline"
                       size={20}
-                      color={COLORS.bgDark}
+                      color={Brand.bgDark}
                     />
                   </TouchableOpacity>
                 </View>
@@ -379,8 +415,8 @@ function ReadyState({
         {habits.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="water-outline" size={24} color={COLORS.brand} />
-              <Text style={styles.cardTitle}>Hábitos</Text>
+              <Ionicons name="water-outline" size={24} color={Brand.accent} />
+              <Text style={styles.cardTitle}>{t('plan.habits')}</Text>
             </View>
             {habits.map((habit: any, index: number) => (
               <View key={habit.id ?? index} style={styles.mealItem}>
@@ -391,8 +427,8 @@ function ReadyState({
                     skipActivity(
                       habit.id ?? `habit_${index}`,
                       'habit',
-                      habit.title ?? 'Hábito',
-                      habit.title ?? 'Hábito',
+                      habit.title ?? t('plan.habits'),
+                      habit.title ?? t('plan.habits'),
                     )
                   }
                 >
@@ -410,14 +446,14 @@ function ReadyState({
                     markCompleted(
                       habit.id ?? `habit_${index}`,
                       'habit',
-                      habit.title ?? 'Hábito',
+                      habit.title ?? t('plan.habits'),
                     )
                   }
                 >
                   <Ionicons
                     name="checkmark-outline"
                     size={20}
-                    color={COLORS.bgDark}
+                    color={Brand.bgDark}
                   />
                 </TouchableOpacity>
               </View>
@@ -429,12 +465,11 @@ function ReadyState({
   );
 }
 
-function formatHumanDate(isoDate: string): string {
-  // isoDate is YYYY-MM-DD in UTC; rendering with es-ES locale.
+function formatHumanDate(isoDate: string, locale: string): string {
   const [y, m, d] = isoDate.split('-').map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));
   return date
-    .toLocaleDateString('es-ES', {
+    .toLocaleDateString(locale || 'es-ES', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -446,27 +481,27 @@ function formatHumanDate(isoDate: string): string {
 const styles = StyleSheet.create({
   centerContainer: {
     flex: 1,
-    backgroundColor: COLORS.bgDark,
+    backgroundColor: Brand.bgDark,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
     gap: 12,
   },
-  errorText: { color: COLORS.danger, fontSize: 16, textAlign: 'center' },
+  errorText: { color: Brand.danger, fontSize: 16, textAlign: 'center' },
   retryBtn: {
-    backgroundColor: COLORS.brand,
+    backgroundColor: Brand.accent,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     marginTop: 8,
   },
-  retryText: { color: COLORS.bgDark, fontWeight: 'bold' },
-  bodyMuted: { color: COLORS.textMuted, fontSize: 14, textAlign: 'center' },
-  container: { flex: 1, backgroundColor: COLORS.bgDark },
+  retryText: { color: Brand.bgDark, fontWeight: 'bold' },
+  bodyMuted: { color: Brand.textMuted, fontSize: 14, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: Brand.bgDark },
   scroll: { padding: 20 },
   dateLabel: {
     fontSize: 12,
-    color: COLORS.brand,
+    color: Brand.accent,
     letterSpacing: 1.5,
     marginBottom: 4,
     fontWeight: '700',
@@ -474,12 +509,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    color: Brand.textPrimary,
     marginBottom: 24,
   },
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
+    backgroundColor: Brand.surface,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
@@ -489,49 +524,39 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.brand,
+    color: Brand.accent,
     marginLeft: 8,
+    flex: 1,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  moreBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   itemTitle: {
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    marginBottom: 12,
-    flex: 1,
-  },
-  completeBtn: {
-    backgroundColor: COLORS.brand,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  completeBtnFlex: { flex: 1 },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  skipBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  skipBtnText: {
-    color: COLORS.textMuted,
-    fontSize: 12,
+    fontSize: 18,
+    color: Brand.textPrimary,
+    marginBottom: 16,
     fontWeight: '600',
   },
+  completeBtn: {
+    backgroundColor: Brand.accent,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
   completeBtnText: {
-    color: COLORS.bgDark,
+    color: Brand.bgDark,
     fontWeight: 'bold',
     fontSize: 16,
   },
+  completedBtn: { opacity: 0.5 },
   mealItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -540,7 +565,7 @@ const styles = StyleSheet.create({
   },
   mealLabel: {
     fontSize: 11,
-    color: COLORS.brand,
+    color: Brand.accent,
     letterSpacing: 1,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -548,14 +573,35 @@ const styles = StyleSheet.create({
   },
   mealMeta: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: Brand.textMuted,
     marginTop: 2,
   },
   completeBtnSmall: {
-    backgroundColor: COLORS.brand,
+    backgroundColor: Brand.accent,
     padding: 8,
     borderRadius: 8,
     marginLeft: 10,
   },
-  completedBtn: { opacity: 0.5 },
+  statsHeader: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 16,
+    backgroundColor: Brand.bgDark,
+  },
+  statsCell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statsValue: {
+    color: Brand.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  statsMuted: {
+    color: Brand.textMuted,
+    fontSize: 12,
+  },
 });
