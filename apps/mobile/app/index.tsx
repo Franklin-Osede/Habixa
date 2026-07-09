@@ -7,10 +7,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { getStoredItem, setStoredItem } from '../src/services/storage';
+import { useAuth } from '../src/services/auth/AuthContext';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const { status } = useAuth();
   const [selectedLang, setSelectedLang] = useState(i18n.language || 'en');
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
@@ -29,17 +31,10 @@ export default function WelcomeScreen() {
     const loadSavedLanguage = async () => {
       try {
         const savedLang = await getStoredItem('user_language');
-        
+
         if (savedLang) {
           setSelectedLang(savedLang);
           await i18n.changeLanguage(savedLang);
-        }
-
-        // Check for token to auto-login
-        const token = await getStoredItem('user_token');
-
-        if (token) {
-           router.replace('/(tabs)');
         }
       } catch (error) {
         console.warn('Error loading saved language:', error);
@@ -47,6 +42,14 @@ export default function WelcomeScreen() {
     };
     loadSavedLanguage();
   }, [i18n]);
+
+  // Auto-enter only once the AuthProvider has validated the session against the
+  // server (via /auth/refresh) — never on the mere presence of a stored token.
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/(tabs)');
+    }
+  }, [status, router]);
 
   // Handle language change
   const handleLanguageChange = async (langId: string) => {

@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../src/services/api.client';
 
 import { getStoredItem, setStoredItem } from '../src/services/storage';
+import { useAuth } from '../src/services/auth/AuthContext';
 
 /** Build profile payload from onboarding params for PUT /identity/profile */
 function buildProfilePayload(params: Record<string, string | undefined>) {
@@ -41,7 +42,8 @@ export default function RegisterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { t } = useTranslation();
-  
+  const { signIn } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -66,9 +68,9 @@ export default function RegisterScreen() {
       
       // 2. Auto-login to get the token
       const loginResponse = await apiClient.post('/auth/login', { email, password });
-      const { accessToken } = loginResponse.data;
-      if (accessToken) {
-        await setStoredItem('user_token', accessToken);
+      const { accessToken, refreshToken } = loginResponse.data;
+      if (accessToken && refreshToken) {
+        await signIn({ accessToken, refreshToken });
       }
 
       // 3. If from onboarding, put profile data and redirect to contract
@@ -97,9 +99,9 @@ export default function RegisterScreen() {
       const devEmail = `dev-${Date.now()}@habixa.ai`;
       await apiClient.post('/identity/register', { email: devEmail, password: 'password' });
       const loginResponse = await apiClient.post('/auth/login', { email: devEmail, password: 'password' });
-      const { accessToken } = loginResponse.data;
-      if (accessToken) {
-        await setStoredItem('user_token', accessToken);
+      const { accessToken, refreshToken } = loginResponse.data;
+      if (accessToken && refreshToken) {
+        await signIn({ accessToken, refreshToken });
       }
       const isFromOnboarding = params.fromOnboarding === 'true';
       let cachedParams: any = null;

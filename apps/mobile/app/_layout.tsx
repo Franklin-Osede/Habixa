@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AuthProvider } from '../src/services/auth/AuthContext';
 import '../global.css';
 import '../i18n';
 
@@ -58,23 +59,25 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={HabixaTheme}>
-      <Stack screenOptions={{ 
-        headerShown: false,
-        contentStyle: {
-          backgroundColor: '#102216',
-        },
-      }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        <Stack.Screen name="onboarding/step-contract" options={{ headerShown: false, contentStyle: { backgroundColor: '#102216' } }} />
-        <Stack.Screen 
-          name="admin/index" 
-          options={{ 
-            presentation: 'modal', 
-            headerShown: false 
-          }} 
-        />
-      </Stack>
+      <AuthProvider>
+        <Stack screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: '#102216',
+          },
+        }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack.Screen name="onboarding/step-contract" options={{ headerShown: false, contentStyle: { backgroundColor: '#102216' } }} />
+          <Stack.Screen
+            name="admin/index"
+            options={{
+              presentation: 'modal',
+              headerShown: false
+            }}
+          />
+        </Stack>
+      </AuthProvider>
       <StatusBar style="light" />
     </ThemeProvider>
   );

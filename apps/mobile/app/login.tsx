@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../src/services/api.client';
 
-import { setStoredItem } from '../src/services/storage';
+import { useAuth } from '../src/services/auth/AuthContext';
 
 
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  
+  const { signIn } = useAuth();
+  const params = useLocalSearchParams();
+  const sessionExpired = params.expired === '1';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -28,10 +31,10 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { email, password });
-      
-      const { accessToken } = response.data;
-      if (accessToken) {
-        await setStoredItem('user_token', accessToken);
+
+      const { accessToken, refreshToken } = response.data;
+      if (accessToken && refreshToken) {
+        await signIn({ accessToken, refreshToken });
         router.replace('/(tabs)');
       }
     } catch (error: any) {
@@ -48,10 +51,10 @@ export default function LoginScreen() {
       const devEmail = `dev-${Date.now()}@habixa.ai`;
       await apiClient.post('/identity/register', { email: devEmail, password: 'password' });
       const response = await apiClient.post('/auth/login', { email: devEmail, password: 'password' });
-      
-      const { accessToken } = response.data;
-      if (accessToken) {
-        await setStoredItem('user_token', accessToken);
+
+      const { accessToken, refreshToken } = response.data;
+      if (accessToken && refreshToken) {
+        await signIn({ accessToken, refreshToken });
         router.replace('/(tabs)');
       }
     } catch (error: any) {
@@ -92,6 +95,16 @@ export default function LoginScreen() {
               <Text className="text-3xl font-bold text-[#E0E0E0] text-center mb-2">{t('auth.welcomeBack')}</Text>
               <Text className="text-sm text-[#0df259]/80 text-center">{t('auth.coachWaiting')}</Text>
             </View>
+
+            {/* Session-expired notice (redirected here by the auth guard) */}
+            {sessionExpired && (
+              <View className="mx-6 mb-6 px-4 py-3 rounded-xl bg-[#3a2a12] border border-[#f2a60d]/40 flex-row items-center gap-2">
+                <MaterialIcons name="info-outline" size={20} color="#f2a60d" />
+                <Text className="text-[#f2c67d] text-sm flex-1">
+                  {t('auth.sessionExpired', 'Your session expired. Please sign in again.')}
+                </Text>
+              </View>
+            )}
 
             {/* Form */}
             <View className="px-6 gap-5">
