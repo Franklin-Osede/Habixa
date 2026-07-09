@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { randomUUID } from 'crypto';
 import { UseCase } from '../../../shared/domain/use-case.interface';
 import { Result } from '../../../shared/domain/result';
 import { UserRepository } from '../../identity/domain/repositories/user.repository';
+import { RefreshTokenRepository } from '../domain/repositories/refresh-token.repository';
 import { HashService } from './hash.service';
-import { LoginDto, AuthTokens, JwtPayload } from './dtos/auth.dto';
+import { TokenService } from './token.service';
+import { LoginDto, AuthTokens } from './dtos/auth.dto';
 
 @Injectable()
 export class LoginUseCase implements UseCase<
@@ -14,7 +16,8 @@ export class LoginUseCase implements UseCase<
   constructor(
     private readonly userRepository: UserRepository,
     private readonly hashService: HashService,
-    private readonly jwtService: JwtService,
+    private readonly tokenService: TokenService,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
   ) {}
 
   async execute(request: LoginDto): Promise<Result<AuthTokens>> {
@@ -33,25 +36,21 @@ export class LoginUseCase implements UseCase<
       return Result.fail('Invalid credentials');
     }
 
-    // 3. Generate tokens
-    const payload: JwtPayload = {
-      sub: user.id.toString(),
+    // 3. Mint access token + a fresh refresh-token family
+    const userId = user.id.toString();
+    const accessToken = this.tokenService.signAccessToken({
+      sub: userId,
       email: user.email,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m',
     });
 
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '7d',
+    const refresh = this.tokenService.generateRefreshToken();
+    await this.refreshTokenRepository.create({
+      userId,
+      tokenHash: refresh.hash,
+      familyId: randomUUID(),
+      expiresAt: this.tokenService.refreshExpiresAt(new Date()),
     });
 
-    const tokens: AuthTokens = {
-      accessToken,
-      refreshToken,
-    };
-
-    return Result.ok(tokens);
+    return Result.ok({ accessToken, refreshToken: refresh.raw });
   }
 }

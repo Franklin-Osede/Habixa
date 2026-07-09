@@ -70,7 +70,27 @@ model User {
   // Voice (Phase 7)
   voicePreference UserVoicePreference?
 
+  // Auth
+  refreshTokens RefreshToken[]
+
   password String
+}
+
+/// Opaque refresh tokens (sha256-hashed at rest) with rotation + reuse detection.
+/// One row per issued token. `familyId` chains rotations from a single login so a
+/// detected reuse can revoke the whole family.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique // sha256(raw token)
+  familyId  String // rotation chain (== id of the first token in the family)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
 }
 
 // --- AI COACH ---

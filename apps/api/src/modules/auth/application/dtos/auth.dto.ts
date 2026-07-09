@@ -3,6 +3,14 @@ export class LoginDto {
   password!: string;
 }
 
+export class RefreshTokenDto {
+  refreshToken!: string;
+}
+
+export class LogoutDto {
+  refreshToken!: string;
+}
+
 export interface JwtPayload {
   sub: string; // user ID
   email: string;

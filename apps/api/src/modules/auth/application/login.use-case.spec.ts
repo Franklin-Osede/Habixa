@@ -1,7 +1,8 @@
-import { JwtService } from '@nestjs/jwt';
 import { LoginUseCase } from './login.use-case';
 import { UserRepository } from '../../identity/domain/repositories/user.repository';
+import { RefreshTokenRepository } from '../domain/repositories/refresh-token.repository';
 import { HashService } from './hash.service';
+import { TokenService } from './token.service';
 import { User } from '../../identity/domain/user.entity';
 import { LoginDto } from './dtos/auth.dto';
 
@@ -9,7 +10,8 @@ describe('LoginUseCase', () => {
   let useCase: LoginUseCase;
   let mockUserRepository: jest.Mocked<UserRepository>;
   let mockHashService: jest.Mocked<HashService>;
-  let mockJwtService: jest.Mocked<JwtService>;
+  let mockTokenService: jest.Mocked<TokenService>;
+  let mockRefreshTokenRepository: jest.Mocked<RefreshTokenRepository>;
 
   beforeEach(() => {
     mockUserRepository = {
@@ -23,14 +25,27 @@ describe('LoginUseCase', () => {
       compare: jest.fn(),
     } as unknown as jest.Mocked<HashService>;
 
-    mockJwtService = {
-      sign: jest.fn(),
-    } as unknown as jest.Mocked<JwtService>;
+    mockTokenService = {
+      signAccessToken: jest.fn().mockReturnValue('access-token'),
+      generateRefreshToken: jest
+        .fn()
+        .mockReturnValue({ raw: 'refresh-token', hash: 'refresh-hash' }),
+      hashToken: jest.fn(),
+      refreshExpiresAt: jest.fn().mockReturnValue(new Date('2099-01-01')),
+    } as unknown as jest.Mocked<TokenService>;
+
+    mockRefreshTokenRepository = {
+      create: jest.fn().mockResolvedValue(undefined),
+      rotate: jest.fn(),
+      revokeFamilyByHash: jest.fn(),
+      revokeAllForUser: jest.fn(),
+    } as unknown as jest.Mocked<RefreshTokenRepository>;
 
     useCase = new LoginUseCase(
       mockUserRepository,
       mockHashService,
-      mockJwtService,
+      mockTokenService,
+      mockRefreshTokenRepository,
     );
   });
 
@@ -47,9 +62,6 @@ describe('LoginUseCase', () => {
 
     mockUserRepository.findByEmail.mockResolvedValue(user);
     mockHashService.compare.mockResolvedValue(true);
-    mockJwtService.sign
-      .mockReturnValueOnce('access-token')
-      .mockReturnValueOnce('refresh-token');
 
     const result = await useCase.execute(dto);
 
@@ -57,6 +69,11 @@ describe('LoginUseCase', () => {
     const tokens = result.getValue();
     expect(tokens.accessToken).toBe('access-token');
     expect(tokens.refreshToken).toBe('refresh-token');
+
+    // A refresh-token family must be persisted on login.
+    expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ tokenHash: 'refresh-hash' }),
+    );
 
     expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(dto.email);
 
