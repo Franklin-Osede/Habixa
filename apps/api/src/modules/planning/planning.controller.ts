@@ -76,7 +76,11 @@ export class PlanningController {
   }
 
   @UseGuards(AuthGuard('jwt'), ThrottlerGuard)
-  @Throttle({ default: { limit: 2, ttl: 86400000 } }) // 2 request max per day
+  // Per-IP daily cap on AI plan generation. Defaults to 2/day for prod cost
+  // control; set PLAN_GEN_DAILY_LIMIT high in dev so "Modo Dev" can iterate.
+  @Throttle({
+    default: { limit: Number(process.env.PLAN_GEN_DAILY_LIMIT) || 2, ttl: 86400000 },
+  })
   @Post('lifestyle/generate')
   async generateLifestyle(
     @Body() body: { startDate?: string },

@@ -1,3 +1,7 @@
+// Load .env into process.env before ANY other import — decorators (e.g. the
+// @Throttle limit) read process.env at class-definition time, which happens
+// while AppModule and its controllers are imported below.
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
