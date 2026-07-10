@@ -55,7 +55,9 @@ export default function LoginScreen() {
       const { accessToken, refreshToken } = response.data;
       if (accessToken && refreshToken) {
         await signIn({ accessToken, refreshToken });
-        router.replace('/(tabs)');
+        // A fresh dev user has no plan yet — go through plan generation so the
+        // home lands on a real plan instead of the empty "set up your plan" state.
+        router.replace('/onboarding/building-plan');
       }
     } catch (error: any) {
       const msg = error.response?.data?.message || 'Dev Login failed';
