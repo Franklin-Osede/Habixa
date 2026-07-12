@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../constants/Colors';
 import { StatusBar } from 'expo-status-bar';
@@ -12,7 +12,7 @@ import { useAuth } from '../src/services/auth/AuthContext';
 export default function WelcomeScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { status } = useAuth();
+  const { status, expired } = useAuth();
   const [selectedLang, setSelectedLang] = useState(i18n.language || 'en');
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
@@ -70,6 +70,12 @@ export default function WelcomeScreen() {
 
   // Get current language info
   const currentLanguage = languages.find(lang => lang.id === selectedLang) || languages[0];
+
+  // An expired session must land on login (with a clear message), not the
+  // marketing welcome screen — otherwise users think they are "stuck".
+  if (expired) {
+    return <Redirect href="/login?expired=1" />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>

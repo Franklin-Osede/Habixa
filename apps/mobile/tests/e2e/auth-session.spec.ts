@@ -66,3 +66,39 @@ test('auth session: login, transparent refresh, and expired-session redirect', a
   await expect.poll(() => page.url(), { timeout: 20_000 }).toContain('expired=1');
   await expect(page.getByText(/session expired/i)).toBeVisible({ timeout: 10_000 });
 });
+
+/**
+ * Regression guard for the "had to clear cookies" bug: an expired session must
+ * land on /login from EVERY entry point — including the "/" welcome route and
+ * the case where only a stale access token (no refresh token) remains — never
+ * on the marketing welcome screen or a stuck screen.
+ */
+for (const scenario of [
+  { name: 'garbage refresh at /', tokens: { user_token: 'x', refresh_token: 'garbage' } },
+  { name: 'stale access, no refresh at /', tokens: { user_token: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.bad' } },
+]) {
+  test(`expired session redirects to /login from "/" (${scenario.name})`, async ({ page }) => {
+    page.on('dialog', (d) => d.accept().catch(() => {}));
+
+    // Establish a real session first.
+    await page.goto('/login');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await expect(page.getByText('Continuar Modo Dev')).toBeVisible({ timeout: 15_000 });
+    await page.getByText('Continuar Modo Dev').click();
+    await page
+      .waitForFunction(() => !!localStorage.getItem('refresh_token'), { timeout: 30_000 })
+      .catch(() => {});
+
+    // Poison the stored tokens, then open the "/" welcome route.
+    await page.evaluate((t) => {
+      localStorage.removeItem('user_token');
+      localStorage.removeItem('refresh_token');
+      for (const [k, v] of Object.entries(t)) localStorage.setItem(k, v as string);
+    }, scenario.tokens);
+    await page.goto('/');
+
+    await expect.poll(() => page.url(), { timeout: 20_000 }).toContain('/login');
+    await expect(page.getByText(/session expired/i)).toBeVisible({ timeout: 10_000 });
+  });
+}
